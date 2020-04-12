@@ -1,12 +1,17 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class DestructableController : MonoBehaviour
 {
     public int health;
     public GameObject destroyedBush;
     // Start is called before the first frame update
+    [Serializable]
+    public class DestroyEvent : UnityEvent {}
+    public DestroyEvent destroyEvent = new DestroyEvent();
     void Start()
     {
         
@@ -20,6 +25,7 @@ public class DestructableController : MonoBehaviour
             GameObject fallingLeaves = Instantiate(destroyedBush, transform);
             fallingLeaves.transform.SetParent(null);
             Destroy(transform.gameObject);
+            destroyEvent.Invoke();
         }
     }
 

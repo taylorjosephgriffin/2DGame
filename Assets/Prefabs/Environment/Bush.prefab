@@ -77,10 +77,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e97ac342f03b34f27b466eec4729de01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sortingOrderBase: 5000
   myRenderer: {fileID: 5369889892262582608}
-  sortAnchor: {fileID: 3422436030659679760}
   offset: 0
+  sortAnchor: {fileID: 3422436030659679760}
 --- !u!114 &2723428547654619068
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96,6 +95,21 @@ MonoBehaviour:
   health: 5
   destroyedBush: {fileID: 4292983480557108117, guid: 7fe5fd588cfe8412cb6cf98dac0a6a3c,
     type: 3}
+  destroyEvent:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 5156163100526443815, guid: 7fe5fd588cfe8412cb6cf98dac0a6a3c,
+          type: 3}
+        m_MethodName: Play
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!58 &6417105331791018906
 CircleCollider2D:
   m_ObjectHideFlags: 0

@@ -2,17 +2,25 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEngine.Events;
 
 [CustomEditor(typeof(Explodable))]
 public class ExplodableEditor : Editor {
-
     public override void OnInspectorGUI()
     {
+
         Explodable myTarget = (Explodable)target;
         myTarget.allowRuntimeFragmentation = EditorGUILayout.Toggle("Allow Runtime Fragmentation", myTarget.allowRuntimeFragmentation);
         myTarget.shatterType = (Explodable.ShatterType)EditorGUILayout.EnumPopup("Shatter Type", myTarget.shatterType);
         myTarget.extraPoints = EditorGUILayout.IntField("Extra Points", myTarget.extraPoints);
         myTarget.subshatterSteps = EditorGUILayout.IntField("Subshatter Steps",myTarget.subshatterSteps);
+        SerializedProperty sprop = serializedObject.FindProperty("explodeEvent");
+        this.serializedObject.Update();
+        EditorGUILayout.PropertyField(sprop);
+        EditorGUILayout.PropertyField (serializedObject.FindProperty("physicsMaterial"));
+        this.serializedObject.ApplyModifiedProperties();
+        
+
         if (myTarget.subshatterSteps > 1)
         {
             EditorGUILayout.HelpBox("Use subshatter steps with caution! Too many will break performance!!! Don't recommend more than 1", MessageType.Warning);

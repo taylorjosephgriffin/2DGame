@@ -174,4 +174,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   myRenderer: {fileID: 6964025188728590034}
+  offset: 0
   sortAnchor: {fileID: 6964025188728590035}

@@ -10,6 +10,7 @@ TagManager:
   - Cursor
   - Pickup
   - Weapon
+  - Explodable
   layers:
   - Default
   - TransparentFX

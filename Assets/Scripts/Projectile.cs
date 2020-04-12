@@ -9,7 +9,7 @@ public class Projectile : MonoBehaviour
     public ProjectileState currentProjectileState = ProjectileState.FIRED;
     public float projectileSpeed = 10;
     public float spawnTime = 5;
-    public int damage;
+    public int damage = 5;
     Vector3 mousePosition;
     Vector3 aimDirection;
     // Start is called before the first frame update
@@ -54,8 +54,11 @@ public class Projectile : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        collision.GetComponent<Explodable>().explode();
-        if (!collision.CompareTag("Pickup"))
+        if (collision.CompareTag("Explodable"))
+        {
+            collision.GetComponent<Explodable>().explode();
+        }
+        if (!collision.CompareTag("Pickup") && !collision.CompareTag("Explodable"))
         {
             currentProjectileState = ProjectileState.HIT;
         }

@@ -1,34 +1,44 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class Sword : MonoBehaviour
 {
-    public GameObject projectile;
-    public Transform projectileAnchor;
+    [SerializeField]
+    private GameObject projectile;
+    [SerializeField]
+    private Transform projectileAnchor;
     private GameObject newProjectile;
     float cooldown = .2f;
     private ShakeBehavior cameraShake;
-    // Start is called before the first frame update
+    [Serializable]
+    public class FireEvent : UnityEvent {}
+    public FireEvent fireEvent = new FireEvent();
     void Start()
     {
         cameraShake = GameObject.FindWithTag("MainCamera").GetComponent<ShakeBehavior>();
     }
 
-    // Update is called once per frame
     void Update()
     {
         cooldown -= Time.deltaTime;
         if (Input.GetButtonDown("Fire1") && cooldown <= 0)
         {
-            cooldown = .2f;
-            newProjectile = Instantiate(projectile);
-            newProjectile.transform.position = projectileAnchor.transform.position;
-            newProjectile.transform.rotation = projectileAnchor.transform.rotation;
-            transform.GetComponent<Animator>().SetTrigger("Attack");
-            newProjectile.GetComponent<Projectile>().currentProjectileState = ProjectileState.FIRED;
-            StartCoroutine(cameraShake.Shake(.05f, .05f));
+            Attack();
         }
 
+    }
+    private void Attack()
+    {
+        cooldown = .2f;
+        newProjectile = Instantiate(projectile);
+        newProjectile.transform.position = projectileAnchor.transform.position;
+        newProjectile.transform.rotation = projectileAnchor.transform.rotation;
+        transform.GetComponent<Animator>().SetTrigger("Attack");
+        newProjectile.GetComponent<Projectile>().currentProjectileState = ProjectileState.FIRED;
+        StartCoroutine(cameraShake.Shake(.05f, .05f));
+        fireEvent.Invoke();
     }
 }

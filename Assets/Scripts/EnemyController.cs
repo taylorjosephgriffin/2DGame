@@ -17,7 +17,7 @@ public class EnemyController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        GameObject.FindWithTag("MainCamera").GetComponent<ShakeBehavior>();
+        cameraShake = GameObject.FindWithTag("MainCamera").GetComponent<ShakeBehavior>();
         player = GameObject.FindWithTag("Player");
     }
 
@@ -55,22 +55,22 @@ public class EnemyController : MonoBehaviour
     void TakeDamage(int damage, Collider2D collision)
     {
         moveDirection = player.transform.position - collision.transform.position;
+        StartCoroutine(cameraShake.Shake(.05f, .05f));
         if (collision.GetComponent<Projectile>())
         {
             collision.GetComponent<Projectile>().currentProjectileState = ProjectileState.HIT;
-            StartCoroutine(cameraShake.Shake(.05f, .05f));
             transform.parent.GetComponent<Rigidbody2D>().AddForce(moveDirection * -4f, ForceMode2D.Impulse);
             health -= damage;
         }
         if (collision.GetComponent<Bolt>() && collision.GetComponent<Bolt>().currentBoltState != BoltState.STUCK)
         {
             transform.parent.GetComponent<Rigidbody2D>().AddForce(moveDirection * -4f, ForceMode2D.Impulse);
-            StartCoroutine(cameraShake.Shake(.05f, .05f));
+            
+            health -= damage;
             if (health > collision.GetComponent<Bolt>().damage)
             {
                 collision.transform.parent = transform;
                 collision.GetComponent<Bolt>().currentBoltState = BoltState.STUCK;
-                health -= damage;
             }
         }
     }
@@ -79,11 +79,18 @@ public class EnemyController : MonoBehaviour
     {
         if (collision.gameObject.tag == "Projectile")
         {
-            Debug.Log("HIT");
-            transform.parent.GetComponent<SpriteRenderer>().color = Color.red;
-            StartCoroutine(whitecolor());
-            if (collision.GetComponent<Bolt>() && collision.GetComponent<Bolt>().currentBoltState == BoltState.FIRED) TakeDamage(collision.GetComponent<Bolt>().damage, collision.GetComponent<Collider2D>());
-            if (collision.GetComponent<Projectile>() && collision.GetComponent<Projectile>().currentProjectileState == ProjectileState.FIRED) TakeDamage(collision.GetComponent<Projectile>().damage, collision.GetComponent<Collider2D>());
+            if (collision.GetComponent<Bolt>() && collision.GetComponent<Bolt>().currentBoltState == BoltState.FIRED) 
+            {
+                transform.parent.GetComponent<SpriteRenderer>().color = Color.red;
+                StartCoroutine(whitecolor());
+                TakeDamage(collision.GetComponent<Bolt>().damage, collision.GetComponent<Collider2D>());
+            }
+            if (collision.GetComponent<Projectile>())
+            {
+                transform.parent.GetComponent<SpriteRenderer>().color = Color.red;
+                StartCoroutine(whitecolor());
+                TakeDamage(collision.GetComponent<Projectile>().damage, collision.GetComponent<Collider2D>());  
+            } 
         }
     }
 }

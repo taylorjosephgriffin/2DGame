@@ -1,17 +1,19 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
+using UnityEngine.Events;
+using System;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class Explodable : MonoBehaviour
 {
     public System.Action<List<GameObject>> OnFragmentsGenerated;
-
     public bool allowRuntimeFragmentation = false;
     public int extraPoints = 0;
+    public PhysicsMaterial2D physicsMaterial;
     public int subshatterSteps = 0;
-
+    [Serializable]
+    public class ExplodeEvent : UnityEvent {}
+    public ExplodeEvent explodeEvent = new ExplodeEvent();
     public string fragmentLayer = "Default";
     public string sortingLayerName = "Default";
     public int orderInLayer = 0;
@@ -35,6 +37,7 @@ public class Explodable : MonoBehaviour
             generateFragments();
             foreach (GameObject frag in fragments)
             {
+                frag.GetComponent<Rigidbody2D>().sharedMaterial = physicsMaterial;
                 frag.SetActive(false);
             }
         }
@@ -45,12 +48,12 @@ public class Explodable : MonoBehaviour
     /// </summary>
     public void explode()
     {
-
-
+        explodeEvent.Invoke();
             foreach (GameObject frag in fragments)
             {
                 frag.SetActive(true);
                 frag.transform.position = new Vector3(frag.transform.position.x, sortingAnchor.position.y, frag.transform.position.z);
+                frag.tag = "Pickup";
             }
 
         //if fragments exist destroy the original
@@ -80,6 +83,7 @@ public class Explodable : MonoBehaviour
         {
             frag.transform.parent = transform;
             frag.SetActive(false);
+            frag.GetComponent<Rigidbody2D>().sharedMaterial = physicsMaterial;;
         }
     }
     public void deleteFragments()
