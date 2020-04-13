@@ -11,6 +11,7 @@ TagManager:
   - Pickup
   - Weapon
   - Explodable
+  - Collider
   layers:
   - Default
   - TransparentFX
