@@ -164,6 +164,8 @@ MonoBehaviour:
   bushChance: 5
   barrel: {fileID: 1665678252905857066, guid: b8e2eefe8dbd9483cbf036ae06b6b6b9, type: 3}
   barrelChance: 1
+  enemy: {fileID: 6732365436108190303, guid: 83827fb6c38a14ce1b072cb435bb6565, type: 3}
+  enemyChance: 1
 --- !u!4 &128762581
 Transform:
   m_ObjectHideFlags: 0
