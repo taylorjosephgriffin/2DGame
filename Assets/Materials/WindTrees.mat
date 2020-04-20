@@ -37,3 +37,4 @@ Material:
     - Vector1_B19CE: 0.06
     m_Colors:
     - Vector2_A97DC09F: {r: 5, g: 0, b: 0, a: 0}
+    - _WindMovement: {r: 4, g: -2, b: 0, a: 0}

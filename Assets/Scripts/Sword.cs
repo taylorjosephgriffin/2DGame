@@ -16,29 +16,45 @@ public class Sword : MonoBehaviour
     [Serializable]
     public class FireEvent : UnityEvent {}
     public FireEvent fireEvent = new FireEvent();
+    public GameObject muzzleFlash;
+    PlayerControls controls;
+    // Start is called before the first frame update
+    [SerializeField]
+    private Animator gunAnimator;
+    
+
+    private void Awake()
+    {
+        controls = new PlayerControls();
+        controls.Gameplay.Enable();
+        controls.Gameplay.Fire1.performed += ctx => Attack();
+        cameraShake = GameObject.FindWithTag("MainCamera").GetComponent<ShakeBehavior>();
+    }
     void Start()
     {
-        cameraShake = GameObject.FindWithTag("MainCamera").GetComponent<ShakeBehavior>();
+    
     }
 
     void Update()
     {
         cooldown -= Time.deltaTime;
-        if (Input.GetButtonDown("Fire1") && cooldown <= 0)
-        {
-            Attack();
-        }
 
     }
-    private void Attack()
+    public void Attack()
     {
-        cooldown = .2f;
-        newProjectile = Instantiate(projectile);
-        newProjectile.transform.position = projectileAnchor.transform.position;
-        newProjectile.transform.rotation = projectileAnchor.transform.rotation;
-        transform.GetComponent<Animator>().SetTrigger("Attack");
-        newProjectile.GetComponent<Projectile>().currentProjectileState = ProjectileState.FIRED;
-        StartCoroutine(cameraShake.Shake(.05f, .05f));
-        fireEvent.Invoke();
+        if (cooldown <= 0)
+        {
+            cooldown = .2f;
+            StartCoroutine(cameraShake.Shake(.05f, .05f));
+            muzzleFlash.GetComponent<ParticleSystem>().Play();
+            gunAnimator.SetTrigger("Recoil");
+            newProjectile = Instantiate(projectile);
+            newProjectile.transform.position = projectileAnchor.transform.position;
+            newProjectile.transform.rotation = projectileAnchor.transform.rotation;
+            transform.GetComponent<Animator>().SetTrigger("Attack");
+            newProjectile.GetComponent<Projectile>().currentProjectileState = ProjectileState.FIRED;
+            fireEvent.Invoke();
+            gunAnimator.ResetTrigger("Recoil");
+        }
     }
 }

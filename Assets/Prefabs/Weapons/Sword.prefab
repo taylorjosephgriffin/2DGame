@@ -148,6 +148,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   projectile: {fileID: 7286641828494473678, guid: cbddf3b960e5f4c91b24f0b197a09a0d,
     type: 3}
+  projectileAnchor: {fileID: 0}
   fireEvent:
     m_PersistentCalls:
       m_Calls:
@@ -189,7 +190,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 8300000, guid: b8c499617dcb54bfdb9a9c7f075227d7, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.525
   m_Pitch: 1
   Loop: 0
   Mute: 0

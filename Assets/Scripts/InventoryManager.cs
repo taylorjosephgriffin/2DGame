@@ -19,7 +19,6 @@ public class InventoryManager : MonoBehaviour
     {
         for (int i = 0; i < slots.Length; i++)
         {
-            Debug.Log(slots[i].transform.childCount == 0);
             if (slots[i].transform.childCount == 0)
             {
                 SetColorOfSlot(i, "REMOVE");

@@ -7,6 +7,8 @@ public class Pickup : MonoBehaviour
     private InventoryManager inventory;
     public GameObject itemSprite;
 
+    public ItemObject item;
+
     private void Start()
     {
         inventory = GameObject.FindGameObjectWithTag("Player").GetComponent<InventoryManager>();
@@ -24,7 +26,6 @@ public class Pickup : MonoBehaviour
                     inventory.isFull[i] = true;
                     inventory.SetColorOfSlot(i, "ADD");
                     GameObject item = Instantiate(itemSprite, inventory.slots[i].transform, false);
-                    item.transform.Rotate(new Vector3(0, 0, 45));
                     Destroy(transform.gameObject);
                     break;
                 }

@@ -70,7 +70,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Floats:
     - PixelSnap: 0
-    - Vector1_3A9059F5: 0.3
+    - Vector1_3A9059F5: 0.2
     - Vector1_B19CE: 0.06
     - _BlendOp: 0
     - _BumpScale: 1
@@ -120,4 +120,4 @@ Material:
     - _RimColor: {r: 0, g: 0, b: 0, a: 1}
     - _SSSColor: {r: 1, g: 1, b: 1, a: 1}
     - _SoftParticleFadeParams: {r: 0, g: 0, b: 0, a: 0}
-    - _WindMovement: {r: 10, g: 0, b: 0, a: 0}
+    - _WindMovement: {r: 8, g: 0, b: 0, a: 0}

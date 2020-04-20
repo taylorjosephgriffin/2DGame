@@ -5,16 +5,14 @@ using UnityEngine;
 public class PlayerAimWeapon : MonoBehaviour
 {
     private Transform aimTransform;
+    GameObject cursor;
+    Vector3 cursorPosition;
 
     private void Awake()
     {
         aimTransform = transform.Find("Aim");
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
+        cursor = GameObject.Find("Cursor");
+        cursorPosition = new Vector2(cursor.transform.position.x, cursor.transform.position.y);
     }
 
     // Update is called once per frame
@@ -26,8 +24,8 @@ public class PlayerAimWeapon : MonoBehaviour
 
     private void HandleAiming()
     {
-        Vector3 mousePosition = Utils.GetMouseWorldPosition();
-        Vector3 aimDirection = (mousePosition - transform.position).normalized;
+        Vector3 aimDirection = (cursor.transform.position - transform.position).normalized;
+        aimDirection.z = 0f;
         float angle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg;
         aimTransform.right = aimDirection;
 

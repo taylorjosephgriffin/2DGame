@@ -22,6 +22,8 @@ namespace CameraController
         private Vector3 lastTargetPosition;
         private Vector3 currentVelocity;
 
+        GameObject cursor;
+
 
         // Use this for initialization
         void Start()
@@ -35,12 +37,16 @@ namespace CameraController
             // This will prevent the camera from following a parent - in case you added the camera as somethings child.
             // (which makes the camera follow whatever parent)
             transform.parent = null;
+
+            cursor = GameObject.Find("Cursor");
         }
 
         // Update is called once per frame
         void FixedUpdate()
         {
-            Vector3 targetPos = player.position;
+            Debug.Log((cursor.transform.position + player.position) / 2);
+        
+            Vector3 targetPos = (cursor.transform.position + player.position) /2;
 
             if (YMinEnabled && YMaxEnabled)
             {
@@ -53,6 +59,7 @@ namespace CameraController
             }
         
             targetPos.z = transform.position.z;
+            
 
             transform.position = Vector3.SmoothDamp(transform.position, targetPos, ref currentVelocity, damping);
 

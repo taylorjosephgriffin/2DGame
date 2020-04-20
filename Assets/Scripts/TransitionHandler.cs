@@ -20,7 +20,6 @@ public class TransitionHandler : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        Debug.Log("entered");
         if (collision.gameObject.tag == "Player")
         {
             SceneManager.LoadScene(SceneIndex);

@@ -12,6 +12,14 @@ public class Projectile : MonoBehaviour
     public int damage = 5;
     Vector3 mousePosition;
     Vector3 aimDirection;
+    GameObject cursor;
+    Vector3 cursorPosition;
+
+    private void Awake()
+    {
+        cursor = GameObject.Find("Cursor");
+        cursorPosition = cursor.transform.position;
+    }
     // Start is called before the first frame update
      void Start()
     {
@@ -27,8 +35,7 @@ public class Projectile : MonoBehaviour
 
     private void CalculateMousePosition()
     {
-        mousePosition = Utils.GetMouseWorldPosition();
-        aimDirection = (mousePosition - transform.position);
+        aimDirection = (cursorPosition - transform.position);
         aimDirection.z = 0;
         aimDirection.Normalize();
     }
@@ -58,7 +65,7 @@ public class Projectile : MonoBehaviour
         {
             collision.GetComponent<Explodable>().explode();
         }
-        if (!collision.CompareTag("Pickup") && !collision.CompareTag("Explodable"))
+        if (!collision.CompareTag("Pickup") && !collision.CompareTag("Explodable") && !collision.CompareTag("Player"))
         {
             currentProjectileState = ProjectileState.HIT;
         }

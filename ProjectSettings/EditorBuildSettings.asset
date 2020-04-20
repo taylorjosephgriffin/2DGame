@@ -6,12 +6,15 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 0
-    path: Assets/Scenes/SampleScene.unity
-    guid: 2cda990e2423bbf4892e6590ba056729
-  - enabled: 1
+    path: 
+    guid: 00000000000000000000000000000000
+  - enabled: 0
     path: Assets/Scenes/Unused/UpstairsHallway.unity
     guid: d24d27b9d3aea4ce2a2d6f424f763a94
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Unused/EntranceHallway.unity
     guid: 2c8a187694f4c4db49dc67d25f0eb2d0
+  - enabled: 1
+    path: Assets/Scenes/ProceduralGenerationTest.unity
+    guid: 50caec429b9934cf6a9b78ba8913b60e
   m_configObjects: {}
