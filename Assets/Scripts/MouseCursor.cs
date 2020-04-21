@@ -52,8 +52,6 @@ public class MouseCursor : MonoBehaviour
         Vector3 offset = newPos - center;
 
         transform.position = center + Vector3.ClampMagnitude(offset, 7);
-
-        Debug.Log(inputDirection);
     
     }
 

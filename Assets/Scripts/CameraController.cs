@@ -44,8 +44,6 @@ namespace CameraController
         // Update is called once per frame
         void FixedUpdate()
         {
-            Debug.Log((cursor.transform.position + player.position) / 2);
-        
             Vector3 targetPos = (cursor.transform.position + player.position) /2;
 
             if (YMinEnabled && YMaxEnabled)

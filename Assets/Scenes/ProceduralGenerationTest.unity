@@ -120,6 +120,51 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &27938548
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 27938550}
+  - component: {fileID: 27938549}
+  m_Layer: 0
+  m_Name: GameSettings
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &27938549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 27938548}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e6c5d6162b254a6cb676ab221c48747, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useLevelGenerator: 1
+  levelGenerator: {fileID: 128762579}
+--- !u!4 &27938550
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 27938548}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 13.512616, y: 30.491, z: -208.62717}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 9
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &128762579
 GameObject:
   m_ObjectHideFlags: 0
@@ -149,11 +194,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f359796fb3ae84abdbe3c4abcd0b4ba7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  direction: 1
   width: 40
   height: 40
   seed: wwlmhzddhk
-  useRandomSeed: 1
-  randomFillPercent: 46
+  useRandomSeed: 0
+  randomFillPercent: 45
   renderMap: {fileID: 782478470}
   wallTile: {fileID: 11400000, guid: f0d1ca906de764e31b4e2ae619fbc42e, type: 2}
   groundTiles:
@@ -166,12 +212,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 538b2a8ff63b34b679daf60ca93b4f2f, type: 2}
   - {fileID: 11400000, guid: 538b2a8ff63b34b679daf60ca93b4f2f, type: 2}
   tree: {fileID: 2800711620541483943, guid: 4f37718b9cd4f4815875ab1d16890726, type: 3}
-  treeChance: 3
+  treeChance: 75
   bush: {fileID: 7603696853654969183, guid: 2858dae06debc4f2491fd668fec04f1b, type: 3}
   bushChance: 5
   barrel: {fileID: 3750769493872963442, guid: ca7704af2911342ab85bafd30b2ba973, type: 3}
   barrelChance: 1
   enemy: {fileID: 6732365436108190303, guid: 83827fb6c38a14ce1b072cb435bb6565, type: 3}
+  wallThresholdSize: 3
+  roomThresholdSize: 28
   enemyChance: 1
 --- !u!4 &128762581
 Transform:
@@ -3550,6 +3598,50 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 803441791}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1333931018
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1333931020}
+  - component: {fileID: 1333931019}
+  m_Layer: 0
+  m_Name: WorldGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1333931019
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1333931018}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6210e9d39a6e742cebf3b05fb9df83e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  texture: Images/worldgentest
+--- !u!4 &1333931020
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1333931018}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 13.512616, y: 30.491, z: -208.62717}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 8
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1367664333
 PrefabInstance:
   m_ObjectHideFlags: 0
