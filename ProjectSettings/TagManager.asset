@@ -12,6 +12,7 @@ TagManager:
   - Weapon
   - Explodable
   - Collider
+  - InventoryUI
   layers:
   - Default
   - TransparentFX
@@ -21,8 +22,8 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
+  - Player
+  - Particle
   - 
   - 
   - 

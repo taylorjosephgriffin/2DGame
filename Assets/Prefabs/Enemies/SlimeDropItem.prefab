@@ -12,8 +12,8 @@ GameObject:
   - component: {fileID: 266380925546686237}
   - component: {fileID: 266380925546686234}
   - component: {fileID: 9172445916387215649}
-  - component: {fileID: 2737215548194050655}
   - component: {fileID: -2664885235880827426}
+  - component: {fileID: 5631206767414963146}
   m_Layer: 0
   m_Name: SlimeDropItem
   m_TagString: Pickup
@@ -120,21 +120,6 @@ MonoBehaviour:
   myRenderer: {fileID: 266380926130248741}
   offset: 0
   sortAnchor: {fileID: 1316478749446308664}
---- !u!114 &2737215548194050655
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 266380925546686235}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ba5f690d9de6844608951ba5e10b0e2a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  itemSprite: {fileID: 7974525420174344917, guid: 65b786a2660d94cd980725434cddc9e2,
-    type: 3}
-  item: {fileID: 0}
 --- !u!58 &-2664885235880827426
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -151,6 +136,19 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0.24}
   serializedVersion: 2
   m_Radius: 0.95
+--- !u!114 &5631206767414963146
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 266380925546686235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e29d66f644e34131b63b0606e98aa05, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  item: {fileID: 11400000, guid: b6fcc4122ec744dd98d4e779e3f68896, type: 2}
 --- !u!1 &266380926130248736
 GameObject:
   m_ObjectHideFlags: 0

@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4115206501194788566}
-  - component: {fileID: 6732365435467670947}
   - component: {fileID: 3277977716600811609}
   m_Layer: 0
   m_Name: Hitbox
@@ -32,25 +31,6 @@ Transform:
   m_Father: {fileID: 6732365436108190298}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6732365435467670947
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 672681532736794559}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a51fc9bc0681f44e19dde3c8112e27a9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Hitbox: {fileID: 672681532736794559}
-  health: 50
-  currentEnemyState: 0
-  deathParticle: {fileID: 6282937052479803878, guid: c3eec22d5035e46f78ae0f57a292c9ba,
-    type: 3}
-  slimeDrop: {fileID: 266380925546686235, guid: 099e9648452c847cf9d2b2e04354fde6,
-    type: 3}
 --- !u!58 &3277977716600811609
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -81,6 +61,8 @@ GameObject:
   - component: {fileID: 6732365436108190301}
   - component: {fileID: 3277977717030294783}
   - component: {fileID: 2652256403064431058}
+  - component: {fileID: 8192675008817551015}
+  - component: {fileID: 1006376216301453023}
   m_Layer: 0
   m_Name: Slime
   m_TagString: Enemy
@@ -96,7 +78,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6732365436108190303}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.86, y: -3.47, z: 0}
+  m_LocalPosition: {x: 10.86, y: -3.47, z: 2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4115206501194788566}
@@ -141,7 +123,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 233
   m_Sprite: {fileID: 21300000, guid: 68d693aa13a414231a75259a3e0ee758, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -215,12 +197,13 @@ AudioSource:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6732365436108190303}
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 4
-  OutputAudioMixerGroup: {fileID: 0}
+  OutputAudioMixerGroup: {fileID: 24300002, guid: b8a4d01bf8a20412f8d2e295261cb2b4,
+    type: 2}
   m_audioClip: {fileID: 0}
-  m_PlayOnAwake: 1
-  m_Volume: 1
+  m_PlayOnAwake: 0
+  m_Volume: 0.512
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -304,6 +287,52 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &8192675008817551015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6732365436108190303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a51fc9bc0681f44e19dde3c8112e27a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  health: 5
+  speed: 2
+  currentEnemyState: 0
+  deathParticle: {fileID: 6282937052479803878, guid: c3eec22d5035e46f78ae0f57a292c9ba,
+    type: 3}
+  slimeDrop: {fileID: 266380925546686235, guid: 099e9648452c847cf9d2b2e04354fde6,
+    type: 3}
+  slimeSounds:
+  - {fileID: 8300000, guid: 7d89cfd69abc5462b8394f2a3fa33349, type: 3}
+  - {fileID: 8300000, guid: 3460991f17edd4d37925d70e2eaca864, type: 3}
+  - {fileID: 8300000, guid: 4dd4b5082a05b4a4489e1229652f9d28, type: 3}
+  - {fileID: 8300000, guid: b9d324164cac94756b0980ffaf9da779, type: 3}
+  - {fileID: 8300000, guid: 623c4b7297deb4b6ba90075823ff0ce9, type: 3}
+  - {fileID: 8300000, guid: e72f4e960452a42fea7b7eb35ecdc0da, type: 3}
+  - {fileID: 8300000, guid: b297cbd23c2604cd99611f7cb2a4ef8d, type: 3}
+  - {fileID: 8300000, guid: be8ee264e06204a60adf206db7aed2d4, type: 3}
+  - {fileID: 8300000, guid: 163068f58d321475ea2ea05d365ef059, type: 3}
+  damage: 5
+--- !u!58 &1006376216301453023
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6732365436108190303}
+  m_Enabled: 0
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  serializedVersion: 2
+  m_Radius: 0.34
 --- !u!1 &8684974534003146676
 GameObject:
   m_ObjectHideFlags: 0

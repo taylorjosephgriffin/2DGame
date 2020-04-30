@@ -46,8 +46,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cursor: {fileID: 21300000, guid: f7689aee34f7f4cfe84ec1f3467de112, type: 3}
   cursorActive: {fileID: 21300000, guid: 4feb2fbe16fb14fadb3ab164f1f5ed33, type: 3}
+  startPos: {x: 0, y: 0, z: 0}
   cursorInactive: {fileID: 21300000, guid: c4ad901e130db408d9ed28e4750074ca, type: 3}
+  sensitivity: 2
   currentCursor: 2
+  cursorPosition: {x: 0, y: 0, z: 0}
 --- !u!212 &8906549953537727766
 SpriteRenderer:
   m_ObjectHideFlags: 0
