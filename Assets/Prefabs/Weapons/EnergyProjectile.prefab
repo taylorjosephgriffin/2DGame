@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 8058362032736585976}
   - component: {fileID: -4252365841716641355}
   - component: {fileID: 3243932511649584700}
-  - component: {fileID: 6134270448378570393}
   - component: {fileID: -5861567385607104162}
   - component: {fileID: 4354280640028360335}
   m_Layer: 0
@@ -99,9 +98,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentProjectileState: 0
-  projectileSpeed: 15
+  projectileSpeed: 35
   spawnTime: 5
   damage: 5
+  aimDirectionOverride: {x: 0, y: 0, z: 0}
+  projectileDeathPrefab: {fileID: 1717842317402828857, guid: be073b2fe2ff14b09b36e07b6da43865,
+    type: 3}
 --- !u!50 &-4252365841716641355
 Rigidbody2D:
   serializedVersion: 4
@@ -120,9 +122,9 @@ Rigidbody2D:
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_Interpolate: 0
-  m_SleepingMode: 1
+  m_SleepingMode: 0
   m_CollisionDetection: 1
-  m_Constraints: 0
+  m_Constraints: 4
 --- !u!58 &3243932511649584700
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -139,25 +141,6 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.4
---- !u!95 &6134270448378570393
-Animator:
-  serializedVersion: 3
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7286641828494473678}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: b0d22a54f4b46423da589923f9d19472, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!114 &-5861567385607104162
 MonoBehaviour:
   m_ObjectHideFlags: 0

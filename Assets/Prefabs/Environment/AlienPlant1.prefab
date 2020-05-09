@@ -111,6 +111,8 @@ GameObject:
   - component: {fileID: 3068833369404102398}
   - component: {fileID: 7881321862520896618}
   - component: {fileID: 1729921120340536569}
+  - component: {fileID: 7090531180853890546}
+  - component: {fileID: 7220344932840755644}
   m_Layer: 0
   m_Name: AlienPlant1
   m_TagString: Destructable
@@ -198,3 +200,47 @@ MonoBehaviour:
   myRenderer: {fileID: 7881321862520896618}
   offset: 0
   sortAnchor: {fileID: 1619699581632573055}
+--- !u!114 &7090531180853890546
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7603696853654969183}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb061cd42e50549b188373ce685381ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spriteColorNormal:
+    serializedVersion: 2
+    rgba: 4294967295
+  spriteColorFade:
+    serializedVersion: 2
+    rgba: 1694498815
+--- !u!61 &7220344932840755644
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7603696853654969183}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0.17}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 2, y: 2}
+    newSize: {x: 2, y: 2}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 1.1, y: 1.41}
+  m_EdgeRadius: 0
