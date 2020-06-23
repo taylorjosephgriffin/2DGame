@@ -31,7 +31,12 @@ public class EnemySpawnGroup : ScriptableObject
    public void spawnEnemies(Vector2Int spawnLocation) {
       for (int i = 0; i < enemyGroup.Length; i++) {
          GameObject newEnemy = Instantiate(enemyGroup[i], GetPositionAroundObject(spawnLocation, 4), new Quaternion(0,0,0,0));
-         newEnemy.GetComponent<EnemyController>().spawnGroup = this;
+         if (newEnemy.GetComponent<EnemyController>() != null) {
+            newEnemy.GetComponent<EnemyController>().spawnGroup = this;
+         }
+         if (newEnemy.GetComponent<DroneController>() != null) {
+            newEnemy.GetComponent<DroneController>().spawnGroup = this;  
+         }
       }
    }
 }

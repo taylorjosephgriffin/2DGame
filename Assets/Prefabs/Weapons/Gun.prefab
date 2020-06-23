@@ -28,8 +28,9 @@ Transform:
   m_LocalPosition: {x: 0.303, y: 0.194, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 0}
   m_Children:
-  - {fileID: 2536930967480511675}
   - {fileID: 7146789138735737838}
+  - {fileID: 2536930967480511675}
+  - {fileID: 7027920899951892903}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -52,6 +53,36 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!1 &3326597414274175863
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7027920899951892903}
+  m_Layer: 0
+  m_Name: ProjectileAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7027920899951892903
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3326597414274175863}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.63, y: 0.024, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 2536930967845935266}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &2536930967387408384
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -102,7 +133,7 @@ PrefabInstance:
     - target: {fileID: 4619149078962775022, guid: 16fd9bcd837ea4843ab0540dfeceb2cc,
         type: 3}
       propertyPath: m_RootOrder
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4619149078962775022, guid: 16fd9bcd837ea4843ab0540dfeceb2cc,
         type: 3}
@@ -119,6 +150,27 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4619149078962775016, guid: 16fd9bcd837ea4843ab0540dfeceb2cc,
+        type: 3}
+      propertyPath: m_audioClip
+      value: 
+      objectReference: {fileID: 8300000, guid: 75020f23c51db864aa461d137dc7e642, type: 3}
+    - target: {fileID: 4619149078962775018, guid: 16fd9bcd837ea4843ab0540dfeceb2cc,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: b3076eb761f31419b8c77982c8ac34ad,
+        type: 3}
+    - target: {fileID: 4619149078962775018, guid: 16fd9bcd837ea4843ab0540dfeceb2cc,
+        type: 3}
+      propertyPath: m_WasSpriteAssigned
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4619149078962775018, guid: 16fd9bcd837ea4843ab0540dfeceb2cc,
+        type: 3}
+      propertyPath: m_Size.x
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4619149078962775019, guid: 16fd9bcd837ea4843ab0540dfeceb2cc,
         type: 3}
       propertyPath: muzzleFlash
@@ -129,11 +181,17 @@ PrefabInstance:
       propertyPath: gunAnimator
       value: 
       objectReference: {fileID: 2536930967845935267}
-    - target: {fileID: 4619149078962775016, guid: 16fd9bcd837ea4843ab0540dfeceb2cc,
+    - target: {fileID: 4619149078962775019, guid: 16fd9bcd837ea4843ab0540dfeceb2cc,
         type: 3}
-      propertyPath: m_audioClip
+      propertyPath: weapon
       value: 
-      objectReference: {fileID: 8300000, guid: 75020f23c51db864aa461d137dc7e642, type: 3}
+      objectReference: {fileID: 11400000, guid: 027a1e5af88f94597a5a42b54827133a,
+        type: 2}
+    - target: {fileID: 4619149078962775019, guid: 16fd9bcd837ea4843ab0540dfeceb2cc,
+        type: 3}
+      propertyPath: projectileAnchor
+      value: 
+      objectReference: {fileID: 7027920899951892903}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 16fd9bcd837ea4843ab0540dfeceb2cc, type: 3}
 --- !u!4 &7146789138735737838 stripped
@@ -183,7 +241,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 408878, guid: ee89463498a58fa4ab6bb4718290b4f0, type: 3}
       propertyPath: m_RootOrder
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 408878, guid: ee89463498a58fa4ab6bb4718290b4f0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -209,6 +267,10 @@ PrefabInstance:
       propertyPath: m_LocalScale.z
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 19993900, guid: ee89463498a58fa4ab6bb4718290b4f0, type: 3}
+      propertyPath: m_AllowRoll
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 19838120, guid: ee89463498a58fa4ab6bb4718290b4f0, type: 3}
       propertyPath: looping
       value: 0
@@ -216,10 +278,6 @@ PrefabInstance:
     - target: {fileID: 19838120, guid: ee89463498a58fa4ab6bb4718290b4f0, type: 3}
       propertyPath: playOnAwake
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 19993900, guid: ee89463498a58fa4ab6bb4718290b4f0, type: 3}
-      propertyPath: m_AllowRoll
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 19880310, guid: ee89463498a58fa4ab6bb4718290b4f0, type: 3}
       propertyPath: playOnAwake

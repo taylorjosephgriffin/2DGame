@@ -21,7 +21,7 @@
     private void Update()
     {
         playerHealth = player.GetComponent<Move>().health;
-        float widthFromHealth = (playerHealth * .01f) * 680;
+        float widthFromHealth = (playerHealth * .01f) * 340;
         rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, widthFromHealth);
         currentHealthUI.text = playerHealth.ToString() + "/100";
     }

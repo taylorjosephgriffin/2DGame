@@ -10,6 +10,10 @@ public class InventoryUI : MonoBehaviour
     public InventorySlot[] slots;
     public InventoryManager inventoryManager;
 
+    public InventorySlot selectedSlot;
+
+    public GameObject contextMenu;
+
     // Start is called before the first frame update
     
     public void Init()
@@ -38,6 +42,15 @@ public class InventoryUI : MonoBehaviour
     private void OnEnable()
     {
         SelectFirstSlot();
+    }
+
+    private void Update()
+    {
+        if (selectedSlot != null) {
+            contextMenu.SetActive(true);
+            contextMenu.transform.SetParent(selectedSlot.transform);
+            contextMenu.GetComponent<RectTransform>().localPosition = new Vector3(400, 100, 0);
+        }
     }
 
     private int? GetNextEmptySlot()

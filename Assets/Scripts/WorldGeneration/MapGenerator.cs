@@ -29,11 +29,12 @@ public class MapGenerator : MonoBehaviour
     [Range(0, 100)]
     private int randomFillPercent;
     int[,] map;
-
     [SerializeField]  
     private Tilemap wallTilemap;
     [SerializeField]  
     public Tilemap floorTilemap;
+    public Tilemap decorationTilemap;
+    public Tilemap backgroundWallTilemap;
     [SerializeField]  
     private RuleTile wallTile;
     [SerializeField]  
@@ -43,48 +44,48 @@ public class MapGenerator : MonoBehaviour
     [SerializeField]  
     private int treeChance;
     [SerializeField]  
-
     private GameObject bush;
     [SerializeField]  
     private int bushChance;
     [SerializeField]  
-
-    private GameObject barrel;
+    private GameObject chest;
     [SerializeField]  
-    private int barrelChance;
+    private int chestChance;
+    [SerializeField]
+    private int maxChests;
     [SerializeField]  
-
     private EnemySpawnGroup [] enemySpawnGroups;
-    
     [SerializeField]  
     private int wallThresholdSize = 3;
     [SerializeField]  
     private int roomThresholdSize = 28;
     [SerializeField]  
-
     private int enemyChance;
-
     private enum Algorithm { WALK_TOP, WALK_TOP_SMOOTH, STANDARD };
     private Algorithm currentAlgorithm = Algorithm.STANDARD;
-
     private List<Vector2> renderedDestructables = new List<Vector2>();
     private List<Vector2> renderedSpawnGroups = new List<Vector2>();
-
     Texture2D minimap;
     public Image miniMapSprite;
-
-    public GameObject testSprite;
-
     public Tile wallTileTop;
     public Tile wallTileThatNeedsShadow;
+    public Tile wallTileCliff;
     public Tile wallTileShadow;
 
     void Start()
     {
+        Init();
+    }
+
+    void Init() {
         GenerateMap();
-        map = runAlgorithm();
         AddDirectionalPassage();
         RenderMap(map, floorTilemap, wallTilemap, wallTile, groundTiles);
+        for (int x = 0; x < width * 2; x++) {
+            for (int y = 0; y < height * 2; y++) {
+                backgroundWallTilemap.SetTile(new Vector3Int(x, y, 0), wallTile);
+            }
+        }
     }
 
     struct Coord {
@@ -189,10 +190,7 @@ public class MapGenerator : MonoBehaviour
             }
             renderedDestructables.Clear();
             renderedSpawnGroups.Clear();
-            GenerateMap();
-            map = runAlgorithm();
-            AddDirectionalPassage();
-            RenderMap(map, floorTilemap, wallTilemap, wallTile, groundTiles);
+            Init();
         }
     }
     
@@ -588,12 +586,14 @@ public class MapGenerator : MonoBehaviour
         //Clear the map (ensures we dont overlap)
         floorTilemap.ClearAllTiles(); 
         wallTilemap.ClearAllTiles();
+        decorationTilemap.ClearAllTiles();
         //Loop through the width of the map
         System.Random pseudoRandom = new System.Random(seed.GetHashCode());
         GameObject colliderContainer = new GameObject();
         Texture2D minimap = new Texture2D(40, 40);
         minimap.filterMode = FilterMode.Point;
         minimap.wrapMode = TextureWrapMode.Clamp;
+        int numberOfChests = 0;
         for (int x = 0; x < width ; x++) 
         {
             //Loop through the height of the map
@@ -610,9 +610,10 @@ public class MapGenerator : MonoBehaviour
                     if (wallTilemap.GetSprite(new Vector3Int(x, y, 0)) == wallTileThatNeedsShadow.sprite && 
                         IsInMapRange(x, y - 1) && 
                         map[x, y - 1] == 0 && IsInMapRange(x, y 
-                        + 1) && map[x,y + 1] != 0 )
+                        + 1) )
                     {
-                        wallTilemap.SetTile(new Vector3Int(x, y, 0), wallTileShadow);
+                        wallTilemap.SetTile(new Vector3Int(x, y, 0), wallTileCliff);
+                        decorationTilemap.SetTile(new Vector3Int(x, y - 1, 0), wallTileShadow);
                     }
                     
                     if (neighbourWallTiles == 0)
@@ -643,12 +644,15 @@ public class MapGenerator : MonoBehaviour
                         randomNumber = UnityEngine.Random.Range(0, 100);
     
                     }
-                    if (barrel != null && pseudoRandom.Next(0, 100) < barrelChance && 
+                    if (chest != null && pseudoRandom.Next(0, 100) < chestChance && 
                         ObjectAreClearFromOtherObjects(renderedDestructables, x, y, 5) &&
-                        ObjectsAreClearFromWalls(x, y, 3)) {
-                        GameObject newBarrel = Instantiate(barrel, new Vector3Int(x, y, 0), new Quaternion(0,0,0,0));
+                        ObjectsAreClearFromWalls(x, y, 3) && 
+                        numberOfChests < maxChests) {
+                        GameObject newBarrel = Instantiate(chest, new Vector3Int(x, y, 0), new Quaternion(0,0,0,0));
                         renderedDestructables.Add(new Vector2(x, y));
                         randomNumber = UnityEngine.Random.Range(0, 100);
+                        minimap.SetPixel(x, y, new Color32(235, 255, 54, 255));
+                        numberOfChests++;
                     }
                     if (randomNumber < enemyChance && 
                         ObjectAreClearFromOtherObjects(renderedSpawnGroups, x, y, 10) &&
@@ -658,8 +662,8 @@ public class MapGenerator : MonoBehaviour
                             newEnemy.spawnEnemies(new Vector2Int(x, y));
                             newEnemy.spawnLocation = new Vector2Int(x, y);
                             newEnemy.wallMap = map;
-                            Instantiate(testSprite, new Vector3Int(x, y, 0), new Quaternion(0,0,0,0));
                             renderedSpawnGroups.Add(new Vector2(x, y));
+                            minimap.SetPixel(x, y, new Color32(86, 255, 85, 255));
                         randomNumber = UnityEngine.Random.Range(0, 100);
                     }
                 }

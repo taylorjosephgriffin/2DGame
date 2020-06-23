@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 3243932511649584700}
   - component: {fileID: -5861567385607104162}
   - component: {fileID: 4354280640028360335}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: EnergyProjectile
   m_TagString: Projectile
   m_Icon: {fileID: 0}
@@ -31,7 +31,7 @@ Transform:
   m_GameObject: {fileID: 7286641828494473678}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -7.6130075, y: -7.8974485, z: 0}
-  m_LocalScale: {x: 0.13280801, y: 0.13280801, z: 0.66404}
+  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -140,7 +140,7 @@ CircleCollider2D:
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
-  m_Radius: 0.4
+  m_Radius: 2.27
 --- !u!114 &-5861567385607104162
 MonoBehaviour:
   m_ObjectHideFlags: 0

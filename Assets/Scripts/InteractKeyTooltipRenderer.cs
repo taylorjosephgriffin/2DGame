@@ -14,10 +14,10 @@ public class InteractKeyTooltipRenderer : MonoBehaviour
 
     private void Start()
     {
-        init();
+        Init();
     }
 
-    private void init()
+    private void Init()
     {
         if (inputManager.currentControlScheme == "Gamepad") currentTooltip = gamepadTooltip;
         else currentTooltip = keyboardTooltip;

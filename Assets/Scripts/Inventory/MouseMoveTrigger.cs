@@ -13,9 +13,12 @@ public class MouseMoveTrigger: MonoBehaviour, IPointerEnterHandler, IPointerExit
    
     // Event invoked when the mouse moves over this UI element.
     public UnityEvent onMouseMove;
+
+
        
     // Called when the pointer enters our GUI component.
     // Start tracking the mouse
+
 
     public void OnPointerEnter( PointerEventData eventData ) {
         StartCoroutine("TrackPointer");
@@ -33,6 +36,7 @@ public class MouseMoveTrigger: MonoBehaviour, IPointerEnterHandler, IPointerExit
             if (Input.mousePosition != mousePos) {
                 if (onMouseMove != null) onMouseMove.Invoke();
                 mousePos = Input.mousePosition;
+
             }
             yield return 0;
         }

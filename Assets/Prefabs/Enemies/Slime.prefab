@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4115206501194788566}
   - component: {fileID: 3277977716600811609}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Hitbox
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -47,6 +47,67 @@ CircleCollider2D:
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.34
+--- !u!1 &6551494876622518531
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1565940993933055544}
+  - component: {fileID: 5593783668250711716}
+  m_Layer: 11
+  m_Name: LootTable
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1565940993933055544
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6551494876622518531}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 6732365436108190298}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5593783668250711716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6551494876622518531}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5951af01ecc954e029069b5fee4b0997, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dropItemPrefab: {fileID: 2335141257484960878, guid: f699a513d8cf94435a0fa3154b9b0d35,
+    type: 3}
+  itemTable:
+  - item: {fileID: 11400000, guid: b6fcc4122ec744dd98d4e779e3f68896, type: 2}
+    dropFrequency: 80
+    minQuantity: 2
+    maxQuantity: 1
+  - item: {fileID: 11400000, guid: 027a1e5af88f94597a5a42b54827133a, type: 2}
+    dropFrequency: 5
+    minQuantity: 1
+    maxQuantity: 1
+  - item: {fileID: 11400000, guid: 8da4cd838392e48ce9e8393a1598201f, type: 2}
+    dropFrequency: 40
+    minQuantity: 1
+    maxQuantity: 1
+  currentDrop: []
+  dropChance: 80
+  enemyCollisionPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &6732365436108190303
 GameObject:
   m_ObjectHideFlags: 0
@@ -62,7 +123,7 @@ GameObject:
   - component: {fileID: 3277977717030294783}
   - component: {fileID: 2652256403064431058}
   - component: {fileID: 8192675008817551015}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Slime
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -82,6 +143,7 @@ Transform:
   m_Children:
   - {fileID: 4115206501194788566}
   - {fileID: 2617844419428444138}
+  - {fileID: 1565940993933055544}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -298,12 +360,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a51fc9bc0681f44e19dde3c8112e27a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 10
-  speed: 2
   currentEnemyState: 0
   deathParticle: {fileID: 6282937052479803878, guid: c3eec22d5035e46f78ae0f57a292c9ba,
     type: 3}
-  slimeDrop: {fileID: 266380925546686235, guid: 099e9648452c847cf9d2b2e04354fde6,
+  slimeDrop: {fileID: 2335141257484960878, guid: f699a513d8cf94435a0fa3154b9b0d35,
     type: 3}
   slimeSounds:
   - {fileID: 8300000, guid: 7d89cfd69abc5462b8394f2a3fa33349, type: 3}
@@ -316,6 +376,14 @@ MonoBehaviour:
   - {fileID: 8300000, guid: be8ee264e06204a60adf206db7aed2d4, type: 3}
   - {fileID: 8300000, guid: 163068f58d321475ea2ea05d365ef059, type: 3}
   damage: 5
+  health: 10
+  speed: 2
+  spawnGroup: {fileID: 0}
+  moveDirection: {x: 0, y: 0, z: 0}
+  player: {fileID: 0}
+  lastCollision: {fileID: 0}
+  lootTableObject: {fileID: 6551494876622518531}
+  enemySpriteRenderer: {fileID: 6732365436108190299}
 --- !u!1 &8684974534003146676
 GameObject:
   m_ObjectHideFlags: 0
@@ -325,7 +393,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2617844419428444138}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: SortingAnchor
   m_TagString: Untagged
   m_Icon: {fileID: 0}

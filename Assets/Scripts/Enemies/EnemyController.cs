@@ -15,38 +15,52 @@ public class EnemyController : MonoBehaviour
     public int health;
     public float speed;
     public EnemySpawnGroup spawnGroup;
-    Vector3 moveDirection;
-    AudioSource slimeAudioSource;
+    public Vector3 moveDirection;
+    AudioSource audioSource;
     Freezer freezer;
     float playerCollisionCooldown = 0f;
-    GameObject player;
+    [HideInInspector]
+    public GameObject player;
 
     bool isNavigating = false;
 
     Vector2 randomNavPoint;
     float idleWaitTime = 2f;
     float timeSpentNavigating;
-    Collider2D lastCollision;
+    [HideInInspector]
+    public Collider2D lastCollision;
+    public GameObject lootTableObject;
+    LootTable lootTable;
+
+    public SpriteRenderer enemySpriteRenderer;
+    Vector3 _origPos;
 
     void Start()
     {
-        freezer = GameObject.Find("GameManager").GetComponent<Freezer>();
+        freezer = GameObject.Find("GameManagers").GetComponent<Freezer>();
         cameraShake = GameObject.FindWithTag("MainCamera").GetComponent<ShakeBehavior>();
         player = GameObject.FindWithTag("Player");
-        slimeAudioSource = GetComponent<AudioSource>();
+        audioSource = GetComponent<AudioSource>();
+        audioSource.pitch = Random.Range(0.8f, 1.2f);
         currentEnemyState = EnemyState.IDLE;
         randomNavPoint = spawnGroup.GetNavigationPointWithinSpawnRadius();
+        lootTable = lootTableObject.GetComponent<LootTable>();
+        Physics2D.IgnoreLayerCollision(11, 12);
     }
 
     IEnumerator HitColorChange()
     {
-        transform.GetComponent<SpriteRenderer>().color = Color.red;
+        enemySpriteRenderer.color = Color.red;
         yield return new WaitForSeconds(0.05f);
-        transform.GetComponent<SpriteRenderer>().color = Color.white;
+        enemySpriteRenderer.color = Color.white;
         yield return new WaitForSeconds(0.05f);
-        transform.GetComponent<SpriteRenderer>().color = Color.red;
+        enemySpriteRenderer.color = Color.red;
         yield return new WaitForSeconds(0.05f);
-        transform.GetComponent<SpriteRenderer>().color = Color.white;
+        enemySpriteRenderer.color = Color.white;
+    }
+
+    protected void IdleState() {
+
     }
 
 
@@ -54,8 +68,11 @@ public class EnemyController : MonoBehaviour
     void Update()
     {
         playerCollisionCooldown -= Time.deltaTime;
-        Animator slimeAnimator = transform.GetComponent<Animator>();
+        Animator animator = transform.GetComponent<Animator>();
         if (health <= 0) currentEnemyState = EnemyState.DEAD;
+        if (Vector3.Distance(transform.position, player.transform.position) < 7 && currentEnemyState != EnemyState.DEAD) {
+            currentEnemyState = EnemyState.ACTIVE;
+        }
         switch (currentEnemyState) {
             case EnemyState.IDLE:
                 if (Vector2.Distance((Vector2)transform.position, randomNavPoint) < 0.2f || timeSpentNavigating > 7) {
@@ -64,25 +81,24 @@ public class EnemyController : MonoBehaviour
                         idleWaitTime = 5;
                         timeSpentNavigating = 0f;
                     } else {
-                        slimeAnimator.SetFloat("IdleSpeed", 1);
+                        animator.SetFloat("IdleSpeed", 1);
                         idleWaitTime -= Time.deltaTime;
                     }
                 }
                 else {
-                    slimeAnimator.SetBool("IsChasing", false);
-                    slimeAnimator.SetFloat("IdleSpeed", 1.5f);
-                    Vector2 movement = Vector2.MoveTowards(transform.position, randomNavPoint, speed * Time.deltaTime);
-                    transform.position = movement;
+                    animator.SetBool("IsChasing", false);
+                    animator.SetFloat("IdleSpeed", 1.5f);
+                    Vector2 wanderMovement = Vector2.MoveTowards(transform.position, randomNavPoint, speed * Time.deltaTime);
+                    transform.position = wanderMovement;
                     timeSpentNavigating += Time.deltaTime;
                 }
                 break;
             case EnemyState.ACTIVE:
-                if (Vector3.Distance(transform.position, player.transform.position) < 7) {
-                    slimeAnimator.SetBool("IsChasing", false);
-                    slimeAnimator.SetFloat("IdleSpeed", 1.5f);
-                    Vector2 movement = Vector2.MoveTowards(transform.position, player.transform.position, speed * Time.deltaTime);
-                    transform.position = movement;
-                }
+                animator.SetBool("IsChasing", false);
+                animator.SetFloat("IdleSpeed", 1.5f);
+                Vector2 activeMovement = Vector2.MoveTowards(transform.position, player.transform.position, speed * Time.deltaTime);
+                transform.position = activeMovement;
+
                 break;
             case EnemyState.DEAD:
                 OnDeath();
@@ -92,43 +108,28 @@ public class EnemyController : MonoBehaviour
 
     void OnDeath()
     {
-        GameObject slimeDeath = Instantiate(deathParticle, transform);
+        GameObject death = Instantiate(deathParticle, transform);
         moveDirection = player.transform.position - lastCollision.transform.position;
         freezer.Freeze();
-        slimeDeath.transform.SetParent(null);
-        float rng = Random.Range(1, 100);
-        if (rng < 50) {
-            GameObject drop = Instantiate(slimeDrop, transform);
-            drop.transform.SetParent(null);
-            drop.GetComponent<Rigidbody2D>().AddForce(moveDirection * -2f, ForceMode2D.Impulse);
-        }
+        death.transform.SetParent(null);
+        lootTableObject.transform.SetParent(null);
+        lootTable.enemyCollisionPosition = lastCollision.transform.position;
+        lootTable.GenerateAndInstaniateLoot();
         Destroy(transform.gameObject);
     }
 
     void PlayJumpingAudio()
     {
-        slimeAudioSource.clip = slimeSounds[Random.Range(0, slimeSounds.Length)];
-        slimeAudioSource.Play();
+        audioSource.clip = slimeSounds[Random.Range(0, slimeSounds.Length)];
+        audioSource.Play();
     }
 
     IEnumerator FreezeAnimFrame()
     {
-        Animator slimeAnimator = transform.GetComponent<Animator>();
-        slimeAnimator.SetFloat("Speed", 0);
-
+        Animator animator = transform.GetComponent<Animator>();
+        animator.SetFloat("Speed", 0);
         yield return new WaitForSeconds(.2f);
-
-        slimeAnimator.SetFloat("Speed", 1);
-    }
-
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, 7);
-        Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(new Vector3(spawnGroup.spawnLocation.x, spawnGroup.spawnLocation.y, 0), spawnGroup.spawnGroupIdleRadius);
-        Gizmos.color = Color.green;
-        Gizmos.DrawSphere(randomNavPoint, 1);
+        animator.SetFloat("Speed", 1);
     }
 
     void TakeDamage(int damage, Collider2D collision)
@@ -136,37 +137,30 @@ public class EnemyController : MonoBehaviour
         moveDirection = player.transform.position - lastCollision.transform.position;
         StartCoroutine(cameraShake.Shake(.05f, .05f));
         if (damage < health) StartCoroutine(FreezeAnimFrame());
-        if (collision.GetComponent<Projectile>()) {
-            collision.GetComponent<Projectile>().currentProjectileState = ProjectileState.HIT;
-            transform.GetComponent<Rigidbody2D>().AddForce(moveDirection * -4f, ForceMode2D.Impulse);
-            health -= damage;
-        }
-        if (collision.GetComponent<Bolt>() && collision.GetComponent<Bolt>().currentBoltState != BoltState.STUCK) {
-            transform.GetComponent<Rigidbody2D>().AddForce(moveDirection * -4f, ForceMode2D.Impulse);
-            
-            health -= damage;
-            if (health > collision.GetComponent<Bolt>().damage) {
-                collision.transform.parent = transform;
-                collision.GetComponent<Bolt>().currentBoltState = BoltState.STUCK;
-            }
-        }
+        collision.GetComponent<Projectile>().currentProjectileState = ProjectileState.HIT;
+        transform.GetComponent<Rigidbody2D>().AddForce(moveDirection * -4f, ForceMode2D.Impulse);
+        health -= damage;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.transform.tag == "Player" && playerCollisionCooldown <= 0) {
-            playerCollisionCooldown = 1f;
-            collision.transform.GetComponent<Move>().TakeDamage(5, transform);
-        }
+        if (collision.transform.tag == "Player" && playerCollisionCooldown <= 0) HandlePlayerCollision(collision);
+    }
+
+    void HandlePlayerCollision(Collision2D player) {
+        playerCollisionCooldown = 1f;
+        player.transform.GetComponent<Move>().TakeDamage(damage, transform);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.gameObject.tag == "Projectile") {
-            lastCollision = collision;
-            transform.GetComponent<SpriteRenderer>().color = Color.red;
-            StartCoroutine(HitColorChange());
-            TakeDamage(collision.GetComponent<Projectile>().damage, collision.GetComponent<Collider2D>());  
-        }
+        if (collision.gameObject.tag == "Projectile") HandleProjectileHit(collision);
+    }
+
+    void HandleProjectileHit(Collider2D projectile) {
+        lastCollision = projectile;
+        enemySpriteRenderer.color = Color.red;
+        StartCoroutine(HitColorChange());
+        TakeDamage(projectile.GetComponent<Projectile>().damage, projectile.GetComponent<Collider2D>());
     }
 }

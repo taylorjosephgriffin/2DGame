@@ -7,7 +7,7 @@ public enum ProjectileState { FIRED, HIT };
 public class Projectile : MonoBehaviour
 {
     public ProjectileState currentProjectileState = ProjectileState.FIRED;
-    public float projectileSpeed = 10;
+    public float projectileSpeed;
     public float spawnTime = 5;
     public int damage = 5;
     Vector3 mousePosition;

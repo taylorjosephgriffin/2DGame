@@ -4,8 +4,21 @@ using UnityEngine;
 
 public class Utils
 {
+     public static Texture2D TextureFromSprite(Sprite sprite)
+     {
+         if(sprite.rect.width != sprite.texture.width){
+             Texture2D newText = new Texture2D((int)sprite.rect.width,(int)sprite.rect.height);
+             Color[] newColors = sprite.texture.GetPixels((int)sprite.textureRect.x, 
+                                                          (int)sprite.textureRect.y, 
+                                                          (int)sprite.textureRect.width, 
+                                                          (int)sprite.textureRect.height );
+             newText.SetPixels(newColors);
+             newText.Apply();
+             return newText;
+         } else
+             return sprite.texture;
+     }
 
-     
     public static Vector3 ClampMagnitudeMinMax(Vector3 v, float min, float max)
     {
         double sm = v.sqrMagnitude;

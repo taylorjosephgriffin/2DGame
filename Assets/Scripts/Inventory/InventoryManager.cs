@@ -33,6 +33,8 @@ public class InventoryManager : MonoBehaviour
     public Text itemNameTooltip;
     public Text itemDescriptionTooltip; 
 
+    public Weapon currentWeapon; 
+
     public GameObject inventoryFulltext;
 
     bool showingInventoryFullText = false;
@@ -41,7 +43,7 @@ public class InventoryManager : MonoBehaviour
         if (instance == null) instance = this;
     }
 
-    private bool InventoryIsFull() {
+    public bool InventoryIsFull() {
     for (int i = 0; i < inventorySlots.slots.Length; i++) {
         if (inventorySlots.slots[i].item != null && inventorySlots.slots[i].quantity >= inventorySlots.slots[i].item.stackLimit) {
             continue;
@@ -70,7 +72,7 @@ public class InventoryManager : MonoBehaviour
         controls.Gameplay.Enable();
         inventorySlots.GetComponent<InventoryUI>().Init();
         inventoryAudioSource = GetComponent<AudioSource>();
-        controls.Gameplay.Inventory.performed += ctx => triggerInventoryStateChange(!inventoryOpen);
+        controls.Gameplay.Inventory.performed += ctx => triggerInventoryStateChange();
     }
 
     public void AddItem(Item newItem, GameObject drop)
@@ -94,21 +96,24 @@ public class InventoryManager : MonoBehaviour
         if (onItemRemoveCallback != null) onItemRemoveCallback.Invoke(newItem);
     }
 
-    void triggerInventoryStateChange(bool inventoryShouldOpen)
+    void triggerInventoryStateChange()
     {
         inventoryAudioSource.clip = openInventorySound;
-        inventoryAudioSource.Play();
-        if (inventoryShouldOpen)
+        if (!inventoryOpen && UIManager.currentUIState == UIManager.UIStates.IN_GAME)
         {
+            inventoryAudioSource.Play();
             inventoryOpen = true;
             inventoryUI.gameObject.SetActive(true);
             PauseManager.PauseGame();
+            UIManager.currentUIState = UIManager.UIStates.INVENTORY;
         }
-        else 
+        else if (inventoryOpen && UIManager.currentUIState == UIManager.UIStates.INVENTORY)
         {
+            inventoryAudioSource.Play();
             inventoryOpen = false;
             inventoryUI.gameObject.SetActive(false);
             PauseManager.PlayGame();
+            UIManager.currentUIState = UIManager.UIStates.IN_GAME;
         }
     }
 }

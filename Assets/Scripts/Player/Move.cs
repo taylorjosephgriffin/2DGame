@@ -54,6 +54,8 @@ public class Move : MonoBehaviour
         controls.Gameplay.Run.performed += ctx => isRunning = true;
         controls.Gameplay.Run.canceled += ctx => isRunning = false;
         shake = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<ShakeBehavior>();
+        Physics2D.IgnoreLayerCollision(8, 10);
+        Physics2D.IgnoreLayerCollision(8, 14);
     }
 
     void Start()

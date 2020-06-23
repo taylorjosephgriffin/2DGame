@@ -12,10 +12,4 @@ public class EnemySpawnerManager : MonoBehaviour
         enemySpawnGroup.spawnEnemies(new Vector2Int((int)transform.position.x, (int)transform.position.y));
         enemySpawnGroup.spawnLocation = new Vector2Int((int)transform.position.x, (int)transform.position.y);
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

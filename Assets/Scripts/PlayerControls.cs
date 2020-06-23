@@ -81,6 +81,22 @@ public class @PlayerControls : IInputActionCollection, IDisposable
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""AudioSettings"",
+                    ""type"": ""Button"",
+                    ""id"": ""a12e2ffb-a1e4-4395-8f66-a020db0431de"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
+                },
+                {
+                    ""name"": ""CharacterCreation"",
+                    ""type"": ""Button"",
+                    ""id"": ""ac40aa79-bd7b-4b23-8933-c6d91ac125a1"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
                 }
             ],
             ""bindings"": [
@@ -292,6 +308,50 @@ public class @PlayerControls : IInputActionCollection, IDisposable
                     ""action"": ""Inventory"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""c468072f-1dd8-4b18-9cd9-7703a4632e97"",
+                    ""path"": ""<Keyboard>/x"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""AudioSettings"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""fb796fc5-6a72-436b-9139-dae18b997e1a"",
+                    ""path"": ""<Gamepad>/start"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""AudioSettings"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7cdd77e5-33ec-40f3-b73c-a764eb789e90"",
+                    ""path"": ""<Keyboard>/c"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""CharacterCreation"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e67ed96c-9fc1-4e4b-aaa3-f3d8a4430ef1"",
+                    ""path"": ""<Gamepad>/dpad/down"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""CharacterCreation"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -320,6 +380,14 @@ public class @PlayerControls : IInputActionCollection, IDisposable
                     ""type"": ""PassThrough"",
                     ""id"": ""3c2309a3-0689-4f0e-b090-0ff81a2a3497"",
                     ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """"
+                },
+                {
+                    ""name"": ""Right Click"",
+                    ""type"": ""Button"",
+                    ""id"": ""811c69d5-3134-4534-a858-2bea538b0e75"",
+                    ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
                 }
@@ -423,6 +491,17 @@ public class @PlayerControls : IInputActionCollection, IDisposable
                     ""action"": ""Move"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f5891563-3f49-428a-98e1-1f44bb2a112c"",
+                    ""path"": ""<Mouse>/rightButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Right Click"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -467,11 +546,14 @@ public class @PlayerControls : IInputActionCollection, IDisposable
         m_Gameplay_Reload = m_Gameplay.FindAction("Reload", throwIfNotFound: true);
         m_Gameplay_Run = m_Gameplay.FindAction("Run", throwIfNotFound: true);
         m_Gameplay_Inventory = m_Gameplay.FindAction("Inventory", throwIfNotFound: true);
+        m_Gameplay_AudioSettings = m_Gameplay.FindAction("AudioSettings", throwIfNotFound: true);
+        m_Gameplay_CharacterCreation = m_Gameplay.FindAction("CharacterCreation", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Point = m_UI.FindAction("Point", throwIfNotFound: true);
         m_UI_LeftClick = m_UI.FindAction("Left Click", throwIfNotFound: true);
         m_UI_Move = m_UI.FindAction("Move", throwIfNotFound: true);
+        m_UI_RightClick = m_UI.FindAction("Right Click", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -529,6 +611,8 @@ public class @PlayerControls : IInputActionCollection, IDisposable
     private readonly InputAction m_Gameplay_Reload;
     private readonly InputAction m_Gameplay_Run;
     private readonly InputAction m_Gameplay_Inventory;
+    private readonly InputAction m_Gameplay_AudioSettings;
+    private readonly InputAction m_Gameplay_CharacterCreation;
     public struct GameplayActions
     {
         private @PlayerControls m_Wrapper;
@@ -541,6 +625,8 @@ public class @PlayerControls : IInputActionCollection, IDisposable
         public InputAction @Reload => m_Wrapper.m_Gameplay_Reload;
         public InputAction @Run => m_Wrapper.m_Gameplay_Run;
         public InputAction @Inventory => m_Wrapper.m_Gameplay_Inventory;
+        public InputAction @AudioSettings => m_Wrapper.m_Gameplay_AudioSettings;
+        public InputAction @CharacterCreation => m_Wrapper.m_Gameplay_CharacterCreation;
         public InputActionMap Get() { return m_Wrapper.m_Gameplay; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -574,6 +660,12 @@ public class @PlayerControls : IInputActionCollection, IDisposable
                 @Inventory.started -= m_Wrapper.m_GameplayActionsCallbackInterface.OnInventory;
                 @Inventory.performed -= m_Wrapper.m_GameplayActionsCallbackInterface.OnInventory;
                 @Inventory.canceled -= m_Wrapper.m_GameplayActionsCallbackInterface.OnInventory;
+                @AudioSettings.started -= m_Wrapper.m_GameplayActionsCallbackInterface.OnAudioSettings;
+                @AudioSettings.performed -= m_Wrapper.m_GameplayActionsCallbackInterface.OnAudioSettings;
+                @AudioSettings.canceled -= m_Wrapper.m_GameplayActionsCallbackInterface.OnAudioSettings;
+                @CharacterCreation.started -= m_Wrapper.m_GameplayActionsCallbackInterface.OnCharacterCreation;
+                @CharacterCreation.performed -= m_Wrapper.m_GameplayActionsCallbackInterface.OnCharacterCreation;
+                @CharacterCreation.canceled -= m_Wrapper.m_GameplayActionsCallbackInterface.OnCharacterCreation;
             }
             m_Wrapper.m_GameplayActionsCallbackInterface = instance;
             if (instance != null)
@@ -602,6 +694,12 @@ public class @PlayerControls : IInputActionCollection, IDisposable
                 @Inventory.started += instance.OnInventory;
                 @Inventory.performed += instance.OnInventory;
                 @Inventory.canceled += instance.OnInventory;
+                @AudioSettings.started += instance.OnAudioSettings;
+                @AudioSettings.performed += instance.OnAudioSettings;
+                @AudioSettings.canceled += instance.OnAudioSettings;
+                @CharacterCreation.started += instance.OnCharacterCreation;
+                @CharacterCreation.performed += instance.OnCharacterCreation;
+                @CharacterCreation.canceled += instance.OnCharacterCreation;
             }
         }
     }
@@ -613,6 +711,7 @@ public class @PlayerControls : IInputActionCollection, IDisposable
     private readonly InputAction m_UI_Point;
     private readonly InputAction m_UI_LeftClick;
     private readonly InputAction m_UI_Move;
+    private readonly InputAction m_UI_RightClick;
     public struct UIActions
     {
         private @PlayerControls m_Wrapper;
@@ -620,6 +719,7 @@ public class @PlayerControls : IInputActionCollection, IDisposable
         public InputAction @Point => m_Wrapper.m_UI_Point;
         public InputAction @LeftClick => m_Wrapper.m_UI_LeftClick;
         public InputAction @Move => m_Wrapper.m_UI_Move;
+        public InputAction @RightClick => m_Wrapper.m_UI_RightClick;
         public InputActionMap Get() { return m_Wrapper.m_UI; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -638,6 +738,9 @@ public class @PlayerControls : IInputActionCollection, IDisposable
                 @Move.started -= m_Wrapper.m_UIActionsCallbackInterface.OnMove;
                 @Move.performed -= m_Wrapper.m_UIActionsCallbackInterface.OnMove;
                 @Move.canceled -= m_Wrapper.m_UIActionsCallbackInterface.OnMove;
+                @RightClick.started -= m_Wrapper.m_UIActionsCallbackInterface.OnRightClick;
+                @RightClick.performed -= m_Wrapper.m_UIActionsCallbackInterface.OnRightClick;
+                @RightClick.canceled -= m_Wrapper.m_UIActionsCallbackInterface.OnRightClick;
             }
             m_Wrapper.m_UIActionsCallbackInterface = instance;
             if (instance != null)
@@ -651,6 +754,9 @@ public class @PlayerControls : IInputActionCollection, IDisposable
                 @Move.started += instance.OnMove;
                 @Move.performed += instance.OnMove;
                 @Move.canceled += instance.OnMove;
+                @RightClick.started += instance.OnRightClick;
+                @RightClick.performed += instance.OnRightClick;
+                @RightClick.canceled += instance.OnRightClick;
             }
         }
     }
@@ -683,11 +789,14 @@ public class @PlayerControls : IInputActionCollection, IDisposable
         void OnReload(InputAction.CallbackContext context);
         void OnRun(InputAction.CallbackContext context);
         void OnInventory(InputAction.CallbackContext context);
+        void OnAudioSettings(InputAction.CallbackContext context);
+        void OnCharacterCreation(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {
         void OnPoint(InputAction.CallbackContext context);
         void OnLeftClick(InputAction.CallbackContext context);
         void OnMove(InputAction.CallbackContext context);
+        void OnRightClick(InputAction.CallbackContext context);
     }
 }
