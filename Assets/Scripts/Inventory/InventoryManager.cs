@@ -38,6 +38,7 @@ public class InventoryManager : MonoBehaviour
     public GameObject inventoryFulltext;
 
     bool showingInventoryFullText = false;
+    public bool inventoryIsFull = false;
     private void Awake()
     {
         if (instance == null) instance = this;
@@ -65,19 +66,20 @@ public class InventoryManager : MonoBehaviour
         }
     }
 
-
     private void Start()
     {
         controls = new PlayerControls();
         controls.Gameplay.Enable();
         inventorySlots.GetComponent<InventoryUI>().Init();
         inventoryAudioSource = GetComponent<AudioSource>();
+        inventoryIsFull = InventoryIsFull();
         controls.Gameplay.Inventory.performed += ctx => triggerInventoryStateChange();
     }
 
     public void AddItem(Item newItem, GameObject drop)
     {
-        if (!InventoryIsFull()) {
+        inventoryIsFull = InventoryIsFull();
+        if (!inventoryIsFull) {
             inventory.Add(newItem);
             Destroy(drop);
             inventoryAudioSource.clip = addItemSound;
@@ -90,6 +92,7 @@ public class InventoryManager : MonoBehaviour
 
     public void RemoveItem(Item newItem)
     {
+        inventoryIsFull = InventoryIsFull();
         inventory.Remove(newItem);
         inventoryAudioSource.clip = removeItemSound;
         inventoryAudioSource.Play();

@@ -53,7 +53,13 @@ public class ItemPickup : MonoBehaviour
         } else {
             GetComponent<CircleCollider2D>().enabled = false;
         }
-    }
+
+        if (InventoryManager.instance.inventoryIsFull) {
+            Physics2D.IgnoreLayerCollision(4, 12);
+        } else {
+            Physics2D.IgnoreLayerCollision(4, 12, false);
+        }
+     }
 
     public void Interact()
     {

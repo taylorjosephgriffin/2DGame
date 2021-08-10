@@ -97,6 +97,30 @@ public class @PlayerControls : IInputActionCollection, IDisposable
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """"
+                },
+                {
+                    ""name"": ""CycleHotbar"",
+                    ""type"": ""PassThrough"",
+                    ""id"": ""3a2f7537-8017-432e-ad2e-350df0c20fff"",
+                    ""expectedControlType"": ""Axis"",
+                    ""processors"": """",
+                    ""interactions"": """"
+                },
+                {
+                    ""name"": ""Flashlight"",
+                    ""type"": ""Button"",
+                    ""id"": ""07a44e1b-5c5f-44c3-b6f1-78524122a26c"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
+                },
+                {
+                    ""name"": ""Dash"",
+                    ""type"": ""Button"",
+                    ""id"": ""4db567a6-c62e-4071-8b13-4b11d52b4c64"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """"
                 }
             ],
             ""bindings"": [
@@ -352,6 +376,39 @@ public class @PlayerControls : IInputActionCollection, IDisposable
                     ""action"": ""CharacterCreation"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""98f740f0-e488-4901-8c24-357c3f3a5ac1"",
+                    ""path"": ""<Mouse>/scroll"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard & Mouse"",
+                    ""action"": ""CycleHotbar"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e3016dca-73cb-48a2-9ff6-b08505b03ab2"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Gamepad;Keyboard & Mouse"",
+                    ""action"": ""Flashlight"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""fa529cb4-cad6-4102-a739-819489a0b4ac"",
+                    ""path"": ""<Keyboard>/space"",
+                    ""interactions"": ""Tap"",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard & Mouse"",
+                    ""action"": ""Dash"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -548,6 +605,9 @@ public class @PlayerControls : IInputActionCollection, IDisposable
         m_Gameplay_Inventory = m_Gameplay.FindAction("Inventory", throwIfNotFound: true);
         m_Gameplay_AudioSettings = m_Gameplay.FindAction("AudioSettings", throwIfNotFound: true);
         m_Gameplay_CharacterCreation = m_Gameplay.FindAction("CharacterCreation", throwIfNotFound: true);
+        m_Gameplay_CycleHotbar = m_Gameplay.FindAction("CycleHotbar", throwIfNotFound: true);
+        m_Gameplay_Flashlight = m_Gameplay.FindAction("Flashlight", throwIfNotFound: true);
+        m_Gameplay_Dash = m_Gameplay.FindAction("Dash", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Point = m_UI.FindAction("Point", throwIfNotFound: true);
@@ -613,6 +673,9 @@ public class @PlayerControls : IInputActionCollection, IDisposable
     private readonly InputAction m_Gameplay_Inventory;
     private readonly InputAction m_Gameplay_AudioSettings;
     private readonly InputAction m_Gameplay_CharacterCreation;
+    private readonly InputAction m_Gameplay_CycleHotbar;
+    private readonly InputAction m_Gameplay_Flashlight;
+    private readonly InputAction m_Gameplay_Dash;
     public struct GameplayActions
     {
         private @PlayerControls m_Wrapper;
@@ -627,6 +690,9 @@ public class @PlayerControls : IInputActionCollection, IDisposable
         public InputAction @Inventory => m_Wrapper.m_Gameplay_Inventory;
         public InputAction @AudioSettings => m_Wrapper.m_Gameplay_AudioSettings;
         public InputAction @CharacterCreation => m_Wrapper.m_Gameplay_CharacterCreation;
+        public InputAction @CycleHotbar => m_Wrapper.m_Gameplay_CycleHotbar;
+        public InputAction @Flashlight => m_Wrapper.m_Gameplay_Flashlight;
+        public InputAction @Dash => m_Wrapper.m_Gameplay_Dash;
         public InputActionMap Get() { return m_Wrapper.m_Gameplay; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -666,6 +732,15 @@ public class @PlayerControls : IInputActionCollection, IDisposable
                 @CharacterCreation.started -= m_Wrapper.m_GameplayActionsCallbackInterface.OnCharacterCreation;
                 @CharacterCreation.performed -= m_Wrapper.m_GameplayActionsCallbackInterface.OnCharacterCreation;
                 @CharacterCreation.canceled -= m_Wrapper.m_GameplayActionsCallbackInterface.OnCharacterCreation;
+                @CycleHotbar.started -= m_Wrapper.m_GameplayActionsCallbackInterface.OnCycleHotbar;
+                @CycleHotbar.performed -= m_Wrapper.m_GameplayActionsCallbackInterface.OnCycleHotbar;
+                @CycleHotbar.canceled -= m_Wrapper.m_GameplayActionsCallbackInterface.OnCycleHotbar;
+                @Flashlight.started -= m_Wrapper.m_GameplayActionsCallbackInterface.OnFlashlight;
+                @Flashlight.performed -= m_Wrapper.m_GameplayActionsCallbackInterface.OnFlashlight;
+                @Flashlight.canceled -= m_Wrapper.m_GameplayActionsCallbackInterface.OnFlashlight;
+                @Dash.started -= m_Wrapper.m_GameplayActionsCallbackInterface.OnDash;
+                @Dash.performed -= m_Wrapper.m_GameplayActionsCallbackInterface.OnDash;
+                @Dash.canceled -= m_Wrapper.m_GameplayActionsCallbackInterface.OnDash;
             }
             m_Wrapper.m_GameplayActionsCallbackInterface = instance;
             if (instance != null)
@@ -700,6 +775,15 @@ public class @PlayerControls : IInputActionCollection, IDisposable
                 @CharacterCreation.started += instance.OnCharacterCreation;
                 @CharacterCreation.performed += instance.OnCharacterCreation;
                 @CharacterCreation.canceled += instance.OnCharacterCreation;
+                @CycleHotbar.started += instance.OnCycleHotbar;
+                @CycleHotbar.performed += instance.OnCycleHotbar;
+                @CycleHotbar.canceled += instance.OnCycleHotbar;
+                @Flashlight.started += instance.OnFlashlight;
+                @Flashlight.performed += instance.OnFlashlight;
+                @Flashlight.canceled += instance.OnFlashlight;
+                @Dash.started += instance.OnDash;
+                @Dash.performed += instance.OnDash;
+                @Dash.canceled += instance.OnDash;
             }
         }
     }
@@ -791,6 +875,9 @@ public class @PlayerControls : IInputActionCollection, IDisposable
         void OnInventory(InputAction.CallbackContext context);
         void OnAudioSettings(InputAction.CallbackContext context);
         void OnCharacterCreation(InputAction.CallbackContext context);
+        void OnCycleHotbar(InputAction.CallbackContext context);
+        void OnFlashlight(InputAction.CallbackContext context);
+        void OnDash(InputAction.CallbackContext context);
     }
     public interface IUIActions
     {

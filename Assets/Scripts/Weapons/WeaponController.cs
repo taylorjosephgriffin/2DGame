@@ -25,6 +25,8 @@ public class WeaponController : MonoBehaviour
     ParticleSystem muzzleFlashParticleSystem;
     public GameObject leftHand;
     public GameObject rightHand;
+
+    public WeaponUI weaponUI;
     
     private void Awake()
     {
@@ -33,6 +35,7 @@ public class WeaponController : MonoBehaviour
         SetupControls();
         SetupGun();
         SetupAnchors();
+        weaponUI.SetWeapon(weapon);
     }
 
 
@@ -70,6 +73,7 @@ public class WeaponController : MonoBehaviour
 
     IEnumerator Reload() {
         isReloading = true;
+        weaponUI.SetReloadingUI();
         reloadingText.SetActive(true);
         yield return new WaitForSeconds(weapon.reloadTime);
         isReloading = false;
@@ -119,10 +123,11 @@ public class WeaponController : MonoBehaviour
 
     public void Attack()
     {
-        bool cannotFire = cooldown <= 0 && !PauseManager.isPaused && !isReloading;
+        bool canFire = cooldown <= 0 && !PauseManager.isPaused && !isReloading;
 
-        if (cannotFire)
+        if (canFire)
         {
+            weaponUI.UpdateBulletUI(currentBulletsInClip);
             ResetCooldown();
             currentBulletsInClip--;
             StartCameraShake();

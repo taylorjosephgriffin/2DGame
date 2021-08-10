@@ -711,8 +711,11 @@ MonoBehaviour:
     type: 3}
   normalSpeed: 5
   runSpeed: 8
+  footstepTimer: 0
   health: 100
+  maxHealth: 100
   footAnchor: {fileID: 1133410769601784462}
+  healthBarUI: {fileID: 0}
   footstepSounds:
   - {fileID: 8300000, guid: eaad4b168ccee4acda0887b137a5ee58, type: 3}
   - {fileID: 8300000, guid: c5ec416a7c90b49a7b254f57bc0a5834, type: 3}
