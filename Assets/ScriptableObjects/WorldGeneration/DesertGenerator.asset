@@ -33,7 +33,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ccfeddb85fb9f4b9cb212c9ccdcd3d40, type: 2}
   grassItem: {fileID: 11400000, guid: e9e84799a0a834e95a1e4adaf1b2a80f, type: 2}
   grassSpawnTile: {fileID: 11400000, guid: 23d3634cf79d4448ab19975416ad1d8b, type: 2}
-  enemySpawnGroups: []
+  enemySpawnGroups:
+  - {fileID: 11400000, guid: 4ab21001fe15742fc91f18aa2166e49a, type: 2}
+  - {fileID: 11400000, guid: 681d42f26f94f455a9030cc1c613a504, type: 2}
   wallTileTop: {fileID: 11400000, guid: c8549271f6be0494bb06087d176dd9f8, type: 2}
   wallTileThatNeedsShadow: {fileID: 11400000, guid: 1770f10b2c0ff44e59f8ec2c69deab43,
     type: 2}

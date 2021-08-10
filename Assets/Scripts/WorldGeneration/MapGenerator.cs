@@ -666,7 +666,7 @@ public class MapGenerator : MonoBehaviour
           floorTilemap.SetTile(new Vector3Int(x, y, 0), groundTiles[pseudoRandom.Next(1, groundTiles.Length)]);
           if (floorTilemap.GetTile(new Vector3Int(x, y, 0)).name == currentBiomeGenerator.grassSpawnTile.name)
           {
-            GameObject newItem = Instantiate(currentBiomeGenerator.grassItem.item, new Vector3Int(x, y, 0), new Quaternion(0, 0, 0, 0));
+            GameObject newItem = Instantiate(currentBiomeGenerator.grassItem.item, new Vector3Int(x + (int)transform.GetComponentInParent<UnityEngine.Transform>().position.x, y + (int)transform.GetComponentInParent<UnityEngine.Transform>().position.y, 0), new Quaternion(0, 0, 0, 0));
             newItem.transform.localScale = new Vector3(scale, scale, 1);
           }
           foreach (var item in currentBiomeGenerator.spawnItems)
@@ -678,7 +678,7 @@ public class MapGenerator : MonoBehaviour
               {
                 if (itemDictionary[item.item.name] < item.max)
                 {
-                  GameObject newItem = Instantiate(item.item, new Vector3Int(x, y, 0), new Quaternion(0, 0, 0, 0));
+                  GameObject newItem = Instantiate(item.item, new Vector3Int(x + (int)transform.GetComponentInParent<UnityEngine.Transform>().position.x, y + (int)transform.GetComponentInParent<UnityEngine.Transform>().position.y, 0), new Quaternion(0, 0, 0, 0));
                   newItem.transform.localScale = new Vector3(scale, scale, 1);
                   renderedDestructables.Add(new Vector2(x, y));
                   randomNumber = UnityEngine.Random.Range(0, 100);

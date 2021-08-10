@@ -22,7 +22,7 @@ MonoBehaviour:
   itemDropLightColor: {r: 0.75187343, g: 0.4229263, b: 0.9056604, a: 0}
   clipSize: 11
   reloadTime: 1
-  bulletSpeed: 25
+  bulletSpeed: 40
   damage: 5
   muzzleFlash: {fileID: 171122, guid: ee89463498a58fa4ab6bb4718290b4f0, type: 3}
   fireCooldown: 0
