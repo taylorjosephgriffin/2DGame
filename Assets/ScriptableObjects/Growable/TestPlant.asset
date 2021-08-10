@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 729a1a7df5ce34bc5b63f4a20ec5dcee, type: 3}
+  m_Name: TestPlant
+  m_EditorClassIdentifier: 
+  itemName: Azul Fruit
+  itemDescription: A small berry similar to the Blueberry on Terra-1.
+  itemIcon: {fileID: 21300000, guid: 640634e53255c4f7fad29a72e9363bda, type: 3}
+  inventoryIconScale: 1
+  stackLimit: 20
+  itemDropShadow: {fileID: 21300000, guid: a5a901e89b934415ea9fb7809c4287f5, type: 3}
+  itemDropIcon: {fileID: 21300000, guid: 640634e53255c4f7fad29a72e9363bda, type: 3}
+  itemDropLightColor: {r: 0.4198113, g: 0.6360194, b: 1, a: 0}
+  stages:
+  - {fileID: 21300000, guid: cb3e9bafba0ef40f3a83cde925cf1696, type: 3}
+  - {fileID: 21300000, guid: 25861692b007442cfb37013757e95818, type: 3}
+  - {fileID: 21300000, guid: 7d0aa8515ce504865acc474196f2ccf5, type: 3}
+  - {fileID: 21300000, guid: 88782203649e74c77925e12a0ad5dc22, type: 3}
+  - {fileID: 21300000, guid: b1672391ef96b4af9a197ac3fdecfd7a, type: 3}
+  - {fileID: 21300000, guid: 1f09a6032984c410b910ab2167fbb758, type: 3}
+  daySinceCreation: 0
+  daysTillFullGrown: 2
+  growItem: {fileID: 11400000, guid: b6fcc4122ec744dd98d4e779e3f68896, type: 2}
+  minHarvestQuantity: 1
+  maxHarvestQuantity: 3
+  isHarvestable: 0
+  size: 1

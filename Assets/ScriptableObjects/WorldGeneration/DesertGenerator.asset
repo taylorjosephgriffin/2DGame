@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc0da9c91eb2b464987811af3d87e2f9, type: 3}
+  m_Name: DesertGenerator
+  m_EditorClassIdentifier: 
+  biomeType: 1
+  wallTile: {fileID: 11400000, guid: 8cc15e26df140458aa71e2ec4fd6bd3e, type: 2}
+  groundTiles:
+  - {fileID: 11400000, guid: c681fecea8053426282752a1aa09c1ea, type: 2}
+  - {fileID: 11400000, guid: d26cfb9481c3a4ff18ec6b462b8b4826, type: 2}
+  - {fileID: 11400000, guid: 57c8d95be830b4db98fd2aaad4a1d249, type: 2}
+  - {fileID: 11400000, guid: 600190370649b4bdb9562b0d7d12cf58, type: 2}
+  - {fileID: 11400000, guid: fd3c0e62b970540dab4c7cdf3552b4bf, type: 2}
+  - {fileID: 11400000, guid: 23d3634cf79d4448ab19975416ad1d8b, type: 2}
+  spawnItems:
+  - {fileID: 11400000, guid: 120afe304aea148e3991706b4a955444, type: 2}
+  - {fileID: 11400000, guid: c7cecd7d6e01c456299ec873566852c1, type: 2}
+  - {fileID: 11400000, guid: b4934316f45c143e7a982fe054393145, type: 2}
+  - {fileID: 11400000, guid: 1ec68b8a1539a4349a452201ddcbaef1, type: 2}
+  - {fileID: 11400000, guid: 44851996fffc944c28ae201ef033cbc9, type: 2}
+  - {fileID: 11400000, guid: 9a321ad204c8e460e961b0494bacfc80, type: 2}
+  - {fileID: 11400000, guid: 22ef3000a274e42149f15fcd3c94ea97, type: 2}
+  - {fileID: 11400000, guid: ccd8f53310afc4bbd9589728634cd2b5, type: 2}
+  - {fileID: 11400000, guid: ccfeddb85fb9f4b9cb212c9ccdcd3d40, type: 2}
+  grassItem: {fileID: 11400000, guid: e9e84799a0a834e95a1e4adaf1b2a80f, type: 2}
+  grassSpawnTile: {fileID: 11400000, guid: 23d3634cf79d4448ab19975416ad1d8b, type: 2}
+  enemySpawnGroups: []
+  wallTileTop: {fileID: 11400000, guid: c8549271f6be0494bb06087d176dd9f8, type: 2}
+  wallTileThatNeedsShadow: {fileID: 11400000, guid: 1770f10b2c0ff44e59f8ec2c69deab43,
+    type: 2}
+  wallTileThatNeedsShadow2: {fileID: 11400000, guid: f6f829275647e4c68ab722532d1aa0f8,
+    type: 2}
+  wallTileCliff: {fileID: 11400000, guid: 013dcc49fd75f4715a74c2f813160799, type: 2}
+  wallTileShadow: {fileID: 11400000, guid: c95d3241a37db4905aa2a96ffb7bfc4a, type: 2}

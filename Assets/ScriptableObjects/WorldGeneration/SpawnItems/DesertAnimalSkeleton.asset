@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dea3eade5225c4990a650ee376d59dea, type: 3}
+  m_Name: DesertAnimalSkeleton
+  m_EditorClassIdentifier: 
+  item: {fileID: 7450275482699538850, guid: 0d4bc53cf2f6743c18a8bd9588b27843, type: 3}
+  chance: 1
+  max: 1
+  minRadius: 3

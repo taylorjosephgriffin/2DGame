@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e90713652b8734b93ad9d018855f3fe5, type: 3}
+  m_Name: TestPlantable
+  m_EditorClassIdentifier: 
+  itemName: Azul Fruit
+  itemDescription: A small berry similar to the Blueberry on Terra-1.
+  itemIcon: {fileID: 21300000, guid: 640634e53255c4f7fad29a72e9363bda, type: 3}
+  inventoryIconScale: 1
+  stackLimit: 20
+  itemDropShadow: {fileID: 21300000, guid: a5a901e89b934415ea9fb7809c4287f5, type: 3}
+  itemDropIcon: {fileID: 21300000, guid: 640634e53255c4f7fad29a72e9363bda, type: 3}
+  itemDropLightColor: {r: 0.2971698, g: 0.48387903, b: 1, a: 0}
+  growable: {fileID: 11400000, guid: 35b9b1c87d9fb4dd1bc459e6832ec836, type: 2}
+  ingredient: {fileID: 11400000, guid: 4536e1a99b9384aacb9887a7f60534c3, type: 2}

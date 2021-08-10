@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dea3eade5225c4990a650ee376d59dea, type: 3}
+  m_Name: ForestTree
+  m_EditorClassIdentifier: 
+  item: {fileID: 2800711620541483943, guid: 4f37718b9cd4f4815875ab1d16890726, type: 3}
+  chance: 2
+  max: 1000
+  minRadius: 4
