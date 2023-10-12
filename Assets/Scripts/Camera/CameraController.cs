@@ -11,10 +11,10 @@ namespace CameraController
     public float damping = 0.5f;
     private Vector3 lastTargetPosition;
     private Vector3 currentVelocity;
-    public float minXPosition = -10.0f; // left border
-    public float maxXPosition = 10.0f; //  right border
-    public float minYPosition = -10.0f; // left border
-    public float maxYPosition = 10.0f; //  right border
+    //public float minXPosition = -10.0f; // left border
+    //public float maxXPosition = 10.0f; //  right border
+    //public float minYPosition = -10.0f; // left border
+    //public float maxYPosition = 10.0f; //  right border
 
 
     Transform cursorTransform;
@@ -40,7 +40,7 @@ namespace CameraController
 
       cameraTransform.position = Vector3.SmoothDamp(cameraTransform.position, targetPos, ref currentVelocity, damping);
 
-      cameraTransform.position = new Vector3(Mathf.Clamp(transform.position.x, minXPosition, maxXPosition), Mathf.Clamp(transform.position.y, minYPosition, maxYPosition), -10);
+      //cameraTransform.position = new Vector3(Mathf.Clamp(transform.position.x, minXPosition, maxXPosition), Mathf.Clamp(transform.position.y, minYPosition, maxYPosition), -10);
 
     }
   }

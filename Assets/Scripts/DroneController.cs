@@ -4,12 +4,12 @@ using UnityEngine;
 
 public class DroneController : MonoBehaviour
 {
-    public enum EnemyState { ACTIVE, DEAD, IDLE, ATTACKING, CHASING}
- private ShakeBehavior cameraShake;
+    public enum EnemyState { ACTIVE, DEAD, IDLE, ATTACKING, CHASING }
+    private ShakeBehavior cameraShake;
     public EnemyState currentEnemyState = EnemyState.IDLE;
     public GameObject deathParticle;
     public GameObject slimeDrop;
-    public AudioClip [] slimeSounds;
+    public AudioClip[] slimeSounds;
     public int damage = 5;
     public int health;
     public float speed;
@@ -29,7 +29,7 @@ public class DroneController : MonoBehaviour
     [HideInInspector]
     public Collider2D lastCollision;
     public GameObject lootTableObject;
-    LootTable lootTable;
+    public LootTable lootTable;
 
     public ParticleSystem bulletEmitter;
 
@@ -54,7 +54,6 @@ public class DroneController : MonoBehaviour
         audioSource.pitch = Random.Range(0.8f, 1.2f);
         currentEnemyState = EnemyState.IDLE;
         randomNavPoint = spawnGroup.GetNavigationPointWithinSpawnRadius();
-        lootTable = lootTableObject.GetComponent<LootTable>();
         Physics2D.IgnoreLayerCollision(11, 12);
     }
 
@@ -69,7 +68,8 @@ public class DroneController : MonoBehaviour
         enemySpriteRenderer.color = Color.white;
     }
 
-    protected void IdleState() {
+    protected void IdleState()
+    {
 
     }
 
@@ -79,67 +79,85 @@ public class DroneController : MonoBehaviour
     {
         ParticleSystem.EmissionModule bulletEmitterModule = bulletEmitter.emission;
         playerCollisionCooldown -= Time.deltaTime;
-        if (health <= 0) {
+        if (health <= 0)
+        {
             currentEnemyState = EnemyState.DEAD;
             bulletEmitterModule.enabled = false;
-        } else if (Vector3.Distance(transform.position, player.transform.position) < 7 && currentEnemyState != EnemyState.DEAD) {
+        }
+        else if (Vector3.Distance(transform.position, player.transform.position) < 7 && currentEnemyState != EnemyState.DEAD)
+        {
             currentEnemyState = EnemyState.ATTACKING;
             bulletEmitterModule.enabled = true;
-        } else if (Vector3.Distance(transform.position, player.transform.position) < 10 && currentEnemyState != EnemyState.DEAD) {
+        }
+        else if (Vector3.Distance(transform.position, player.transform.position) < 10 && currentEnemyState != EnemyState.DEAD)
+        {
             currentEnemyState = EnemyState.CHASING;
             bulletEmitterModule.enabled = false;
-            foreach (Animator animator in droneAnimators) {
+            foreach (Animator animator in droneAnimators)
+            {
                 animator.SetBool("IsAttacking", false);
             }
             isAttacking = false;
-        } else {
-            foreach (Animator animator in droneAnimators) {
+        }
+        else
+        {
+            foreach (Animator animator in droneAnimators)
+            {
                 animator.SetBool("IsAttacking", false);
             }
             bulletEmitterModule.enabled = false;
             isAttacking = false;
             currentEnemyState = EnemyState.IDLE;
         }
-        switch (currentEnemyState) {
+        switch (currentEnemyState)
+        {
             case EnemyState.IDLE:
                 StartCoroutine(droneAudioIdle());
-                if (Vector2.Distance((Vector2)transform.position, randomNavPoint) < 0.2f || timeSpentNavigating > 7) {
-                    if (idleWaitTime <= 0) {
+                if (Vector2.Distance((Vector2)transform.position, randomNavPoint) < 0.2f || timeSpentNavigating > 7)
+                {
+                    if (idleWaitTime <= 0)
+                    {
                         randomNavPoint = spawnGroup.GetNavigationPointWithinSpawnRadius();
                         idleWaitTime = 5;
                         timeSpentNavigating = 0f;
-                    } else {
+                    }
+                    else
+                    {
 
                         idleWaitTime -= Time.deltaTime;
                     }
                     bulletEmitterModule.enabled = false;
                 }
-                else {
+                else
+                {
                     Vector2 wanderMovement = Vector2.MoveTowards(transform.position, randomNavPoint, speed * Time.deltaTime);
                     transform.position = wanderMovement;
                     timeSpentNavigating += Time.deltaTime;
                 }
                 break;
-            case EnemyState.CHASING: 
+            case EnemyState.CHASING:
                 Vector2 activeMovement = Vector2.MoveTowards(transform.position, player.transform.position, speed * Time.deltaTime);
                 transform.position = activeMovement;
-                foreach (Animator animator in droneAnimators) {
+                foreach (Animator animator in droneAnimators)
+                {
                     animator.SetBool("IsAttacking", false);
                 }
                 bulletEmitterModule.enabled = false;
                 break;
             case EnemyState.ATTACKING:
-                 if (!isAttacking) {
+                if (!isAttacking)
+                {
                     isAttacking = true;
                     droneAudioAttacking();
-                    foreach (Animator animator in droneAnimators) {
+                    foreach (Animator animator in droneAnimators)
+                    {
                         animator.SetBool("IsAttacking", true);
                     }
                     bulletEmitter.Play();
                     bulletEmitterModule.enabled = true;
                     InsantiateProjectiles();
                 }
-                
+
                 break;
             case EnemyState.DEAD:
                 OnDeath();
@@ -148,20 +166,22 @@ public class DroneController : MonoBehaviour
         }
     }
 
-    void InsantiateProjectiles() {
+    void InsantiateProjectiles()
+    {
         int RaysToShoot = 5;
         float angle = 0;
-        for (int i = 0; i < RaysToShoot; i++) {
+        for (int i = 0; i < RaysToShoot; i++)
+        {
             float x = Mathf.Sin(angle);
             float y = Mathf.Cos(angle);
             angle += 2 * Mathf.PI / RaysToShoot;
-        
+
             Vector3 dir = new Vector3(transform.position.x + x, transform.position.y + y, 0);
             GameObject newProjectile = Instantiate(droneProjectile, transform);
             newProjectile.transform.right = dir;
         }
     }
-    
+
     /*
 
       private int RaysToShoot = 30;
@@ -183,7 +203,7 @@ public class DroneController : MonoBehaviour
     void OnDeath()
     {
         GameObject death = Instantiate(deathParticle, transform);
-        
+
         freezer.Freeze();
         death.transform.SetParent(null);
         lootTableObject.transform.SetParent(null);
@@ -198,13 +218,15 @@ public class DroneController : MonoBehaviour
         audioSource.Play();
     }
 
-    IEnumerator droneAudioIdle() {
+    IEnumerator droneAudioIdle()
+    {
         audioSource.clip = dronePowerUp;
         yield return new WaitForSeconds(dronePowerUp.length);
         audioSource.clip = droneSoundNormal;
     }
 
-    IEnumerator droneAudioAttacking() {
+    IEnumerator droneAudioAttacking()
+    {
         audioSource.clip = droneWindDown;
         yield return new WaitForSeconds(droneWindDown.length);
         audioSource.clip = droneLowSpeedAudio;
@@ -232,7 +254,8 @@ public class DroneController : MonoBehaviour
         if (collision.transform.tag == "Player" && playerCollisionCooldown <= 0) HandlePlayerCollision(collision);
     }
 
-    void HandlePlayerCollision(Collision2D player) {
+    void HandlePlayerCollision(Collision2D player)
+    {
         playerCollisionCooldown = 1f;
         player.transform.GetComponent<Move>().TakeDamage(damage, transform);
     }
@@ -242,7 +265,8 @@ public class DroneController : MonoBehaviour
         if (collision.gameObject.tag == "Projectile") HandleProjectileHit(collision);
     }
 
-    void HandleProjectileHit(Collider2D projectile) {
+    void HandleProjectileHit(Collider2D projectile)
+    {
         lastCollision = projectile;
         enemySpriteRenderer.color = Color.red;
         StartCoroutine(HitColorChange());

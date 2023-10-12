@@ -30,10 +30,12 @@ public class EnemyController : MonoBehaviour
   [HideInInspector]
   public Collider2D lastCollision;
   public GameObject lootTableObject;
-  LootTable lootTable;
+  public LootTable lootTable;
 
   public SpriteRenderer enemySpriteRenderer;
   Vector3 _origPos;
+
+  Vector2 targetNav;
 
   void Start()
   {
@@ -44,8 +46,8 @@ public class EnemyController : MonoBehaviour
     audioSource.pitch = Random.Range(0.8f, 1.2f);
     currentEnemyState = EnemyState.IDLE;
     randomNavPoint = spawnGroup.GetNavigationPointWithinSpawnRadius();
-    lootTable = lootTableObject.GetComponent<LootTable>();
     Physics2D.IgnoreLayerCollision(11, 12);
+    Physics2D.IgnoreLayerCollision(11, 4);
   }
 
   IEnumerator HitColorChange()
@@ -75,26 +77,43 @@ public class EnemyController : MonoBehaviour
     {
       currentEnemyState = EnemyState.ACTIVE;
     }
+    Vector3 movementDirection = (targetNav - new Vector2(transform.position.x, transform.position.y)).normalized;
+    movementDirection.z = 0f;
+    float angle = Mathf.Atan2(movementDirection.y, movementDirection.x) * Mathf.Rad2Deg;
+    Vector3 a = Vector3.one;
+    if (angle > 90 || angle < -90)
+    {
+      a.x = 1f;
+    }
+    else
+    {
+      a.x = -1f;
+    }
+    transform.localScale = a;
     switch (currentEnemyState)
     {
       case EnemyState.IDLE:
-        if (Vector2.Distance((Vector2)transform.position, randomNavPoint) < 0.2f || timeSpentNavigating > 7)
+        speed = 1f;
+        if (Vector2.Distance((Vector2)transform.position, randomNavPoint) < 0.2f || timeSpentNavigating > 5)
         {
           if (idleWaitTime <= 0)
           {
             randomNavPoint = spawnGroup.GetNavigationPointWithinSpawnRadius();
+            targetNav = randomNavPoint;
+            animator.SetBool("IsWandering", true);
             idleWaitTime = 5;
             timeSpentNavigating = 0f;
           }
           else
           {
+            animator.SetBool("IsWandering", false);
             animator.SetFloat("IdleSpeed", 1);
             idleWaitTime -= Time.deltaTime;
           }
         }
         else
         {
-          animator.SetBool("IsChasing", false);
+          animator.SetBool("IsWandering", true);
           animator.SetFloat("IdleSpeed", 1.5f);
           Vector2 wanderMovement = Vector2.MoveTowards(transform.position, randomNavPoint, speed * Time.deltaTime);
           transform.position = wanderMovement;
@@ -103,12 +122,17 @@ public class EnemyController : MonoBehaviour
         break;
       case EnemyState.ACTIVE:
         animator.SetBool("IsChasing", true);
-        animator.SetFloat("IdleSpeed", 1.5f);
+        animator.SetBool("IsWandering", false);
+        animator.SetFloat("Speed", 2f);
+        speed = 4f;
+        targetNav = player.transform.position;
         Vector2 activeMovement = Vector2.MoveTowards(transform.position, player.transform.position, speed * Time.deltaTime);
         transform.position = activeMovement;
 
         break;
       case EnemyState.DEAD:
+        animator.SetBool("IsChasing", false);
+        animator.SetBool("IsWandering", false);
         OnDeath();
         break;
     }

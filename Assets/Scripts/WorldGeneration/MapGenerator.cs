@@ -24,6 +24,8 @@ public class MapGenerator : MonoBehaviour
 
   public bool shouldSpawnEnemies;
 
+  public UnityEngine.Transform player;
+
   public GeneratorConfig currentBiomeGenerator;
   [SerializeField]
   private int width;
@@ -86,7 +88,6 @@ public class MapGenerator : MonoBehaviour
 
   void AddDirectionalPassage()
   {
-    UnityEngine.Transform player = GameObject.FindWithTag("Player").transform;
     if (directions.Contains(EntranceDirection.NORTH))
     {
       int xIndexNorth = (int)(width / 2 + .5f);

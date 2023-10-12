@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 public class Move : MonoBehaviour
 {
   private GameObject player;
-  private GameObject playerSprite;
+  public GameObject playerSprite;
   public GameObject walkDust;
   [SerializeField]
   private float normalSpeed;
@@ -61,13 +61,13 @@ public class Move : MonoBehaviour
     controls.Gameplay.Dash.canceled += ctx => isDashKeyDown = false;
     shake = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<ShakeBehavior>();
     //Physics2D.IgnoreLayerCollision(8, 10);
+    Physics2D.IgnoreLayerCollision(4, 10);
     Physics2D.IgnoreLayerCollision(8, 14);
   }
 
   void Start()
   {
     player = GameObject.FindWithTag("Player");
-    playerSprite = player.transform.Find("Sprite").gameObject;
     rb = GetComponent<Rigidbody2D>();
     jetpackParticle.transform.gameObject.SetActive(true);
   }
@@ -135,7 +135,11 @@ public class Move : MonoBehaviour
       case DashState.Dashing:
         dashTimer += Time.deltaTime * 3;
         Vector3 movePosition = transform.position;
-        jetpackParticle.Play();
+        if (!jetpackParticle.isPlaying)
+        {
+          jetpackParticle.Play();
+          Debug.Log("Playering Dash Particle");
+        }
         Physics2D.IgnoreLayerCollision(11, 8, true);
 
         rb.MovePosition(rb.position + new Vector2(inputDirection.x, inputDirection.y) * currentSpeed * 3 * Time.fixedDeltaTime);

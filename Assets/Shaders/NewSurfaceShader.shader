@@ -13,7 +13,7 @@ Properties {
 }
  
 SubShader {
-    Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout" "RenderPipeline" = "LightweightPipeline"}
+    Tags {"Queue"="AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout" "RenderPipeline" = "UniversalPipeline"}
     LOD 200
    
 CGPROGRAM
@@ -93,8 +93,8 @@ void surf (Input IN, inout SurfaceOutput o) {
 }
 ENDCG
 }
- #include "Packages/com.unity.render-pipelines.lightweight/Shaders/2D/Include/LightingUtility.hlsl"
- 
+ #include "Packages/com.unity.render-pipelines.universal/Shaders/2D/Include/LightingUtility.hlsl"
+
 Fallback "Transparent/Cutout/VertexLit"
 }
  

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc0da9c91eb2b464987811af3d87e2f9, type: 3}
+  m_Name: TundraGenerator
+  m_EditorClassIdentifier: 
+  biomeType: 2
+  wallTile: {fileID: 11400000, guid: c5033b286949f4c1cb162f3a6c986e8c, type: 2}
+  groundTiles:
+  - {fileID: 11400000, guid: f83ab63ec153145f384945dee1f84023, type: 2}
+  - {fileID: 11400000, guid: c3e398b408e6c4216b62cea8bd3dc496, type: 2}
+  - {fileID: 11400000, guid: 1137ccab18f654c36a1be467c1b33647, type: 2}
+  - {fileID: 11400000, guid: 7816a9c096f7c4594b9db296e721d0db, type: 2}
+  - {fileID: 11400000, guid: ba5bdd74bf6b7429ea652096fcc461de, type: 2}
+  - {fileID: 11400000, guid: 22157311ff30f4afea6d86339f6943ab, type: 2}
+  - {fileID: 11400000, guid: 22157311ff30f4afea6d86339f6943ab, type: 2}
+  spawnItems:
+  - {fileID: 11400000, guid: 07c4e283c8bfe415ab7574f435ffec29, type: 2}
+  - {fileID: 11400000, guid: cacb892b423db4ef7844939dc923f0aa, type: 2}
+  grassItem: {fileID: 11400000, guid: c604969f2c7734fdf944e76ccb5d74a0, type: 2}
+  grassSpawnTile: {fileID: 11400000, guid: 7816a9c096f7c4594b9db296e721d0db, type: 2}
+  enemySpawnGroups:
+  - {fileID: 11400000, guid: 4ab21001fe15742fc91f18aa2166e49a, type: 2}
+  wallTileTop: {fileID: 11400000, guid: a9dd58b11b2d1453bb7e062339de180a, type: 2}
+  wallTileThatNeedsShadow: {fileID: 11400000, guid: e3be3eb894fd547ac8cf70c672d1ecf4,
+    type: 2}
+  wallTileThatNeedsShadow2: {fileID: 11400000, guid: 65ef22e98105b4cdba8a60d4e5c014aa,
+    type: 2}
+  wallTileCliff: {fileID: 11400000, guid: 93c7cb22248954ef6a2c87c7036722f9, type: 2}
+  wallTileShadow: {fileID: 11400000, guid: c95d3241a37db4905aa2a96ffb7bfc4a, type: 2}

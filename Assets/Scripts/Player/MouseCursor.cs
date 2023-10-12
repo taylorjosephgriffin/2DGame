@@ -58,22 +58,17 @@ public class MouseCursor : MonoBehaviour
     {
       if (inputManager.currentControlScheme == "Gamepad")
       {
-
         Vector3 movement = new Vector3(inputDirection.x, inputDirection.y, 0);
-        Vector3 center = player.transform.position + Vector3.ClampMagnitude(player.transform.position, 3);
         cursorPosition = transform.position + movement * (sensitivity * joystickSensitivityMultiplier);
-        Vector3 offset = cursorPosition - center;
-        if (inputDirection.x == 0 && inputDirection.y == 0) transform.position = center;
-        else transform.position = center + Utils.ClampMagnitudeMinMax(offset, cursorMinOffset, cursorMaxOffset);
       }
       else if (inputManager.currentControlScheme == "Keyboard & Mouse")
       {
         Vector3 movement = new Vector3(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"), 0);
-        Vector3 center = player.transform.position;
         cursorPosition = transform.position + movement * sensitivity;
-        Vector3 offset = cursorPosition - center;
-        transform.position = center + Utils.ClampMagnitudeMinMax(offset, cursorMinOffset, cursorMaxOffset);
       }
+      Vector3 center = player.transform.position;
+      Vector3 offset = cursorPosition - center;
+      transform.position = center + Utils.ClampMagnitudeMinMax(offset, cursorMinOffset, cursorMaxOffset);
       if (currentCursor == currentCursorEnum.Active)
       {
         rend.sprite = cursorActive;

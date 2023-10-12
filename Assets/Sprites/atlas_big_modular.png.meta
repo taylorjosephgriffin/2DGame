@@ -186,7 +186,7 @@ TextureImporter:
       213: -5881414006362203422
     second: atlas_big_modular_60
   externalObjects: {}
-  serializedVersion: 10
+  serializedVersion: 12
   mipmaps:
     mipMapMode: 0
     enableMipMap: 0
@@ -206,6 +206,8 @@ TextureImporter:
   isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMasterTextureLimit: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -215,8 +217,8 @@ TextureImporter:
   textureSettings:
     serializedVersion: 2
     filterMode: 0
-    aniso: -1
-    mipBias: -100
+    aniso: 1
+    mipBias: 0
     wrapU: 1
     wrapV: 1
     wrapW: 1
@@ -237,9 +239,14 @@ TextureImporter:
   textureType: 8
   textureShape: 1
   singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
   maxTextureSizeSet: 0
   compressionQualitySet: 0
   textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 1
+  cookieLightType: 1
   platformSettings:
   - serializedVersion: 3
     buildTarget: DefaultTexturePlatform
@@ -267,6 +274,18 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 3
     buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Server
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
@@ -1571,6 +1590,68 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
+    nameFileIdTable:
+      atlas_big_modular_0: -6016728462368501366
+      atlas_big_modular_1: -1250932974733244853
+      atlas_big_modular_10: -4219004631310664929
+      atlas_big_modular_11: 6451265489179488704
+      atlas_big_modular_12: 541788305231272454
+      atlas_big_modular_13: 5520782953617176823
+      atlas_big_modular_14: 6891042349802206562
+      atlas_big_modular_15: -4071419492257174108
+      atlas_big_modular_16: 5016728081965479342
+      atlas_big_modular_17: -4956843233041798963
+      atlas_big_modular_18: -3841717406942908274
+      atlas_big_modular_19: -3715371253950867171
+      atlas_big_modular_2: 1007396075299705321
+      atlas_big_modular_20: 6757929921583900483
+      atlas_big_modular_21: -6041900612822224982
+      atlas_big_modular_22: -4157334822985321584
+      atlas_big_modular_23: 6890820457488211505
+      atlas_big_modular_24: 4972002668289134803
+      atlas_big_modular_25: 6675874573896294327
+      atlas_big_modular_26: 6524972150420525315
+      atlas_big_modular_27: -9196284296391262816
+      atlas_big_modular_28: 6624981156541815045
+      atlas_big_modular_29: 2887292536413046977
+      atlas_big_modular_3: 7057887529461333046
+      atlas_big_modular_30: -6107543116145792264
+      atlas_big_modular_31: 1563772751541571394
+      atlas_big_modular_32: -3828914083676470246
+      atlas_big_modular_33: -7621772555743338020
+      atlas_big_modular_34: -8154024550944230379
+      atlas_big_modular_35: 4871511825639129922
+      atlas_big_modular_36: 4138367506329907894
+      atlas_big_modular_37: -6709893397389581072
+      atlas_big_modular_38: 362303417939645308
+      atlas_big_modular_39: 5534767702397405078
+      atlas_big_modular_4: -5455172333614711678
+      atlas_big_modular_40: -8290441489784023004
+      atlas_big_modular_41: 9141555398533553348
+      atlas_big_modular_42: 5682334789967416204
+      atlas_big_modular_43: -3001301407745078976
+      atlas_big_modular_44: 7775875874991929639
+      atlas_big_modular_45: 2344349154547746470
+      atlas_big_modular_46: -2483026478522847515
+      atlas_big_modular_47: -4751245841488542417
+      atlas_big_modular_48: -8674207283497863807
+      atlas_big_modular_49: -951886150109016750
+      atlas_big_modular_5: 6353569239323236461
+      atlas_big_modular_50: 232210342087798408
+      atlas_big_modular_51: 2289760951096134345
+      atlas_big_modular_52: -3344078647238693985
+      atlas_big_modular_53: 230455661578727109
+      atlas_big_modular_54: -2958635118713064437
+      atlas_big_modular_55: 212537669088135038
+      atlas_big_modular_56: -8118326467201834970
+      atlas_big_modular_57: -6726101837539207617
+      atlas_big_modular_58: -6311304939545368664
+      atlas_big_modular_59: -3819157243190762579
+      atlas_big_modular_6: -827832825513841653
+      atlas_big_modular_60: -5881414006362203422
+      atlas_big_modular_7: -9128510296782858021
+      atlas_big_modular_8: 5083658594032043544
+      atlas_big_modular_9: 6441787781111948933
   spritePackingTag: 
   pSDRemoveMatte: 0
   pSDShowRemoveMatteOption: 0

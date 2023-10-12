@@ -1,32 +1,32 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.PostProcessing;
 
 public class ShakeBehavior : MonoBehaviour
 {
-    Vector3 initialPosition;
+  Vector3 initialPosition;
 
-    public IEnumerator Shake (float duration, float magnitude)
+  public IEnumerator Shake(float duration, float magnitude)
+  {
+    if (!PauseManager.isPaused)
     {
-        if (!PauseManager.isPaused)
-        {
-            initialPosition = transform.position;
-            float elapsed = 0.0f;
-            while (elapsed < duration)
-            {
-                float x = Random.Range(initialPosition.x - (1f * magnitude), initialPosition.x + (1f * magnitude));
-                float y = Random.Range(initialPosition.y - (1f * magnitude), initialPosition.y + (1f * magnitude));
+      initialPosition = transform.position;
+      float elapsed = 0.0f;
+      while (elapsed < duration)
+      {
+        float x = Random.Range(initialPosition.x - (1f * magnitude), initialPosition.x + (1f * magnitude));
+        float y = Random.Range(initialPosition.y - (1f * magnitude), initialPosition.y + (1f * magnitude));
 
 
-                transform.localPosition = new Vector3(x, y, initialPosition.z);
+        transform.localPosition = new Vector3(x, y, initialPosition.z);
 
-                elapsed += Time.deltaTime;
+        elapsed += Time.deltaTime;
 
-                yield return null;
-            }
-
-            transform.localPosition = initialPosition;
-        }
+        yield return null;
+      }
+      transform.localPosition = initialPosition;
     }
-}   
+  }
+}
 

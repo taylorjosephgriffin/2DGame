@@ -51,6 +51,11 @@ MonoBehaviour:
   sensitivity: 2
   currentCursor: 2
   cursorPosition: {x: 0, y: 0, z: 0}
+  playerInput: {fileID: 0}
+  joystickSensitivityMultiplier: 1
+  cursorMinOffset: 0
+  cursorMaxOffset: 0
+  inputManager: {fileID: 0}
 --- !u!212 &8906549953537727766
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -68,7 +73,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 7b121a1b4a993415b80ecca9dc6f80dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
