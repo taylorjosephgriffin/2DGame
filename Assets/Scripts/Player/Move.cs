@@ -34,20 +34,6 @@ public class Move : MonoBehaviour
 
   public Progress healthBarUI;
   public AudioClip[] footstepSounds;
-  public enum DashState
-  {
-    Ready,
-    Dashing,
-    Cooldown
-  }
-
-  public DashState dashState;
-  public float dashTimer;
-  public float maxDash = 1f;
-  public float dashCooldown = 0f;
-  bool isDashKeyDown = false;
-
-  public ParticleSystem jetpackParticle;
   private void Awake()
   {
     controls = new PlayerControls();
@@ -57,8 +43,6 @@ public class Move : MonoBehaviour
     controls.Gameplay.Move.performed += ctx => inputDirection = ctx.ReadValue<Vector2>();
     controls.Gameplay.Run.performed += ctx => isRunning = true;
     controls.Gameplay.Run.canceled += ctx => isRunning = false;
-    controls.Gameplay.Dash.performed += ctx => isDashKeyDown = true;
-    controls.Gameplay.Dash.canceled += ctx => isDashKeyDown = false;
     shake = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<ShakeBehavior>();
     //Physics2D.IgnoreLayerCollision(8, 10);
     Physics2D.IgnoreLayerCollision(4, 10);
@@ -69,7 +53,6 @@ public class Move : MonoBehaviour
   {
     player = GameObject.FindWithTag("Player");
     rb = GetComponent<Rigidbody2D>();
-    jetpackParticle.transform.gameObject.SetActive(true);
   }
   IEnumerator whitecolor()
   {
@@ -117,56 +100,8 @@ public class Move : MonoBehaviour
       playerSprite.transform.GetComponent<SpriteRenderer>().flipX = true;
     }
 
-    if (canDash)
-    {
-      rb.MovePosition(rb.position + new Vector2(inputDirection.x, inputDirection.y) * currentSpeed * Time.fixedDeltaTime);
-    }
+    rb.MovePosition(rb.position + new Vector2(inputDirection.x, inputDirection.y) * currentSpeed * Time.fixedDeltaTime);
 
-    float dashCooldownCopy = dashCooldown;
-    switch (dashState)
-    {
-      case DashState.Ready:
-        if (isDashKeyDown)
-        {
-          Debug.Log("DASH KEY DOWN");
-          dashState = DashState.Dashing;
-        }
-        break;
-      case DashState.Dashing:
-        dashTimer += Time.deltaTime * 3;
-        Vector3 movePosition = transform.position;
-        if (!jetpackParticle.isPlaying)
-        {
-          jetpackParticle.Play();
-          Debug.Log("Playering Dash Particle");
-        }
-        Physics2D.IgnoreLayerCollision(11, 8, true);
-
-        rb.MovePosition(rb.position + new Vector2(inputDirection.x, inputDirection.y) * currentSpeed * 3 * Time.fixedDeltaTime);
-
-        playerSprite.GetComponent<SpriteRenderer>().color = new Color32(255, 0, 0, 255);
-        if (dashTimer >= maxDash)
-        {
-          Debug.Log("DASHING");
-          dashTimer = maxDash;
-          dashState = DashState.Cooldown;
-        }
-        break;
-      case DashState.Cooldown:
-        Physics2D.IgnoreLayerCollision(11, 8, false);
-        dashCooldownCopy -= Time.deltaTime;
-        jetpackParticle.Stop();
-        if (dashCooldownCopy <= 0)
-        {
-          Debug.Log("DONE DASHING");
-          isDashKeyDown = false;
-          dashTimer = 0;
-          dashCooldownCopy = dashCooldown;
-          dashState = DashState.Ready;
-          playerSprite.GetComponent<SpriteRenderer>().color = new Color32(255, 255, 255, 255);
-        }
-        break;
-    }
 
     if (isMoving)
     {

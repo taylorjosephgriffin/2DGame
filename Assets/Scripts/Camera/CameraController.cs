@@ -33,7 +33,7 @@ namespace CameraController
     // Update is called once per frame
     void LateUpdate()
     {
-      Vector3 targetPos = (cursorTransform.position + playerTransform.position) / 2;
+      Vector3 targetPos = cursorTransform.position;
 
       targetPos.z = cameraTransform.position.z;
 

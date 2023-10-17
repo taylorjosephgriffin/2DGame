@@ -7,10 +7,21 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 8354667880332764465, guid: cd7287c6dcc6b43d8a02f18d6ec49662,
+        type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 372608a3e8d634313b3e376f59446b2d,
+        type: 3}
     - target: {fileID: 8354667880332764477, guid: cd7287c6dcc6b43d8a02f18d6ec49662,
         type: 3}
       propertyPath: m_Name
       value: InteractButtonUI
+      objectReference: {fileID: 0}
+    - target: {fileID: 8354667880332764478, guid: cd7287c6dcc6b43d8a02f18d6ec49662,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8354667880332764478, guid: cd7287c6dcc6b43d8a02f18d6ec49662,
         type: 3}
@@ -29,6 +40,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8354667880332764478, guid: cd7287c6dcc6b43d8a02f18d6ec49662,
         type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8354667880332764478, guid: cd7287c6dcc6b43d8a02f18d6ec49662,
+        type: 3}
       propertyPath: m_LocalRotation.x
       value: -0
       objectReference: {fileID: 0}
@@ -41,16 +57,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalRotation.z
       value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8354667880332764478, guid: cd7287c6dcc6b43d8a02f18d6ec49662,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8354667880332764478, guid: cd7287c6dcc6b43d8a02f18d6ec49662,
-        type: 3}
-      propertyPath: m_RootOrder
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8354667880332764478, guid: cd7287c6dcc6b43d8a02f18d6ec49662,
         type: 3}
@@ -67,17 +73,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8354667880332764465, guid: cd7287c6dcc6b43d8a02f18d6ec49662,
-        type: 3}
-      propertyPath: m_Sprite
-      value: 
-      objectReference: {fileID: 21300000, guid: 372608a3e8d634313b3e376f59446b2d,
-        type: 3}
-    - target: {fileID: 8354667880556052607, guid: cd7287c6dcc6b43d8a02f18d6ec49662,
-        type: 3}
-      propertyPath: m_Name
-      value: Button
-      objectReference: {fileID: 0}
     - target: {fileID: 8354667880556052592, guid: cd7287c6dcc6b43d8a02f18d6ec49662,
         type: 3}
       propertyPath: m_LocalPosition.y
@@ -89,5 +84,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 21300000, guid: 4d243164095464b07a027bfb32aacb48,
         type: 3}
+    - target: {fileID: 8354667880556052607, guid: cd7287c6dcc6b43d8a02f18d6ec49662,
+        type: 3}
+      propertyPath: m_Name
+      value: Button
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: cd7287c6dcc6b43d8a02f18d6ec49662, type: 3}

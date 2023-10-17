@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c04375e1749864dfd956c0c7d01f5ab1, type: 3}
   m_Name: LaserSickleGreen
   m_EditorClassIdentifier: 
-  itemName: Lazer Sickle
-  itemDescription: '----'
+  itemName: Laser Sickle
+  itemDescription: ----
   itemIcon: {fileID: 21300000, guid: 1ffcdf380fe3f4e4b9640ff23dc0ef8d, type: 3}
   inventoryIconScale: 1
   stackLimit: 1

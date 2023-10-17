@@ -26,7 +26,6 @@ public class WeaponController : MonoBehaviour
   public GameObject leftHand;
   public GameObject rightHand;
 
-  public WeaponUI weaponUI;
 
   private void Awake()
   {
@@ -35,7 +34,6 @@ public class WeaponController : MonoBehaviour
     SetupControls();
     SetupGun();
     SetupAnchors();
-    weaponUI.SetWeapon(weapon);
   }
 
 
@@ -78,7 +76,6 @@ public class WeaponController : MonoBehaviour
   IEnumerator Reload()
   {
     isReloading = true;
-    weaponUI.SetReloadingUI();
     reloadingText.SetActive(true);
     yield return new WaitForSeconds(weapon.reloadTime);
     isReloading = false;
@@ -139,7 +136,6 @@ public class WeaponController : MonoBehaviour
     if (canFire)
     {
       StartCoroutine(TriggerRecoilAnim());
-      weaponUI.UpdateBulletUI(currentBulletsInClip);
       ResetCooldown();
       currentBulletsInClip--;
       StartCameraShake();

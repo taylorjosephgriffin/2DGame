@@ -11,7 +11,7 @@ public class WorldGeneration : MonoBehaviour
   private void Start()
   {
     image = (Texture2D)Resources.Load(texture);
-    map = new int[image.width * 3, image.height * 3];
+    map = new int[image.width * 10, image.height * 10];
     pixelReader();
   }
   // Vector2 worldSize = new Vector2(4, 4);
@@ -71,20 +71,20 @@ public class WorldGeneration : MonoBehaviour
     }
   }
 
-  private void OnDrawGizmos()
-  {
-    if (map != null)
-    {
-      for (int x = 0; x < map.Length; x++)
-      {
-        for (int y = 0; y < map.Length; y++)
-        {
-          Gizmos.color = (map[x, y] == 1) ? Color.green : Color.black;
-          Vector3 pos = new Vector3((-image.width / 2 + x + 0.5f), y, (-image.height / 2 + y + 0.5f));
-          Gizmos.DrawCube(pos, Vector3.one);
-        }
-      }
-    }
-  }
+  // private void OnDrawGizmos()
+  // {
+  //   if (map != null)
+  //   {
+  //     for (int x = 0; x < map.Length; x++)
+  //     {
+  //       for (int y = 0; y < map.Length; y++)
+  //       {
+  //         Gizmos.color = (map[x, y] == 1) ? Color.green : Color.black;
+  //         Vector3 pos = new Vector3((-image.width / 2 + x + 0.5f), y, (-image.height / 2 + y + 0.5f));
+  //         Gizmos.DrawCube(pos, Vector3.one);
+  //       }
+  //     }
+  //   }
+  // }
 
 }

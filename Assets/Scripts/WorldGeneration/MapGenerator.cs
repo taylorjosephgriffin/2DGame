@@ -613,7 +613,7 @@ public class MapGenerator : MonoBehaviour
     //Loop through the width of the map
     System.Random pseudoRandom = new System.Random(seed.GetHashCode());
     GameObject colliderContainer = new GameObject();
-    Texture2D minimap = new Texture2D(60, 60);
+    Texture2D minimap = new Texture2D(width, height);
     minimap.filterMode = FilterMode.Point;
     minimap.wrapMode = TextureWrapMode.Clamp;
     SortedDictionary<string, int> itemDictionary = new SortedDictionary<string, int>();
@@ -740,7 +740,7 @@ public class MapGenerator : MonoBehaviour
       }
     }
     minimap.Apply();
-    miniMapSprite.sprite = Sprite.Create(minimap, new Rect(0, 0, 60, 60), Vector2.zero, 100);
+    miniMapSprite.sprite = Sprite.Create(minimap, new Rect(0, 0, width, height), Vector2.zero, 100);
   }
 
   void RandomFillMap()

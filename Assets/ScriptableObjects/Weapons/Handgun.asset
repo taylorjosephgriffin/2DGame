@@ -20,12 +20,12 @@ MonoBehaviour:
   itemDropShadow: {fileID: 21300000, guid: a5a901e89b934415ea9fb7809c4287f5, type: 3}
   itemDropIcon: {fileID: 21300000, guid: b3076eb761f31419b8c77982c8ac34ad, type: 3}
   itemDropLightColor: {r: 0.75187343, g: 0.4229263, b: 0.9056604, a: 0}
-  clipSize: 11
+  clipSize: 5
   reloadTime: 1
   bulletSpeed: 40
   damage: 5
   muzzleFlash: {fileID: 171122, guid: ee89463498a58fa4ab6bb4718290b4f0, type: 3}
-  fireCooldown: 0.3
+  fireCooldown: 0
   projectile: {fileID: 7286641828494473678, guid: cbddf3b960e5f4c91b24f0b197a09a0d,
     type: 3}
   weaponSprite: {fileID: 21300000, guid: b3076eb761f31419b8c77982c8ac34ad, type: 3}
