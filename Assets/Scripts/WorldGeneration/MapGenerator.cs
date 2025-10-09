@@ -14,7 +14,9 @@ public class MapGenerator : MonoBehaviour
     NORTH,
     SOUTH,
     EAST,
-    WEST
+    WEST,
+
+    NONE
   }
   public EntranceDirection direction;
   public EntranceDirection[] directions;
@@ -32,9 +34,9 @@ public class MapGenerator : MonoBehaviour
   [SerializeField]
   private int height;
   [SerializeField]
-  private string seed;
+  public string seed;
   [SerializeField]
-  private bool useRandomSeed;
+  public bool useRandomSeed;
   [Range(0, 20)]
   private int smoothIterations = 1;
   [SerializeField]
@@ -528,6 +530,11 @@ public class MapGenerator : MonoBehaviour
     return map;
   }
 
+  public void SetEntrances(EntranceDirection[] dirs)
+{
+    directions = dirs;
+}
+
   public int[,] RandomWalkTopSmoothed(int[,] map, string seed, int minSectionWidth)
   {
     //Seed our random
@@ -728,13 +735,13 @@ public class MapGenerator : MonoBehaviour
               ObjectsAreClearFromWalls(x, y, 5))
           {
 
-            EnemySpawnGroup newEnemy = Instantiate(currentBiomeGenerator.enemySpawnGroups[0]);
-            newEnemy.spawnEnemies(new Vector2Int(x, y));
-            newEnemy.spawnLocation = new Vector2Int(x, y);
-            newEnemy.wallMap = map;
-            renderedSpawnGroups.Add(new Vector2(x, y));
-            minimap.SetPixel(x, y, new Color32(86, 255, 85, 255));
-            randomNumber = UnityEngine.Random.Range(0, 100);
+            // EnemySpawnGroup newEnemy = Instantiate(currentBiomeGenerator.enemySpawnGroups[0]);
+            // newEnemy.spawnEnemies(new Vector2Int(x, y));
+            // newEnemy.spawnLocation = new Vector2Int(x, y);
+            // newEnemy.wallMap = map;
+            // renderedSpawnGroups.Add(new Vector2(x, y));
+            // minimap.SetPixel(x, y, new Color32(86, 255, 85, 255));
+            // randomNumber = UnityEngine.Random.Range(0, 100);
           }
         }
       }

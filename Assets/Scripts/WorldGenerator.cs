@@ -6,109 +6,704 @@ using TMPro;
 
 public class WorldGenerator : MonoBehaviour
 {
-  public GameObject mapContainer;
-  GameObject emptyTilemap;
-  private Tilemap wallTilemap, decorationTilemap, waterTilemap, floorTilemap;
-  public Tile tile;
+  public GameObject mapContainer; // Prefab or container for rooms
   public GeneratorConfig biomeGenerator;
-  // Start is called before the first frame update
-  public enum Direction
-  {
-    NORTH,
-    SOUTH,
-    WEST,
-    EAST
-  }
-  public Dictionary<int, Direction> directionDictionary = new Dictionary<int, Direction>()
-  {
-      {0, Direction.NORTH},
-      {1, Direction.SOUTH},
-      {2, Direction.EAST},
-      {3, Direction.WEST}
-  };
-
-  //  public List<int[,]> roomLocations = new List<int[,]>();
   public WorldGenerationController worldGenerationController;
 
-  public KeyValuePair<int, int> currentRoomLocation = new KeyValuePair<int, int>(0, -1);
+  // Biome configs
+  public GeneratorConfig forestConfig;
+  public GeneratorConfig desertConfig;
+  public GeneratorConfig tundraConfig;
+  public int targetRooms = 10; // Number of rooms to generate
 
-  public Direction currentDirection;
+  // Room size (should match MapGenerator's width/height)
+  public int roomWidth = 60;
+  public int roomHeight = 60;
 
+  [System.Serializable]
+  public class StaticRoom
+  {
+    public Vector2Int position; // anchor (e.g., top-left or center)
+    public GameObject prefab;
+    public Vector2Int size = new Vector2Int(1, 1); // width, height
+  }
+  public List<StaticRoom> staticRooms = new List<StaticRoom>();
+
+  // Directions: N, S, E, W
+  private Vector2Int[] cardinalDirections;
+  // For tracking which directions each room should have entrances
+  private Dictionary<Vector2Int, HashSet<Vector2Int>> roomEntrances = new Dictionary<Vector2Int, HashSet<Vector2Int>>();
+  private Dictionary<Vector2Int, MapGenerator> roomMapGens = new Dictionary<Vector2Int, MapGenerator>();
   void Start()
   {
-    worldGenerationController.roomLocations.Add(new KeyValuePair<int, int>(0, 0));
-    worldGenerationController.roomLocations.Add(new KeyValuePair<int, int>((int)transform.position.x, (int)transform.position.y));
-    currentRoomLocation = new KeyValuePair<int, int>((int)transform.position.x, (int)transform.position.y);
-    currentDirection = Direction.WEST;
-    CreateTilemap(currentRoomLocation);
-    CreateTilemapLocations();
+    cardinalDirections = new Vector2Int[] {
+        new Vector2Int(0, roomHeight),    // Up
+        new Vector2Int(0, -roomHeight),   // Down
+        new Vector2Int(roomWidth, 0),     // Right
+        new Vector2Int(-roomWidth, 0)     // Left
+    };
+
+    // Clear previous room locations
+    if (worldGenerationController.roomLocations == null)
+      worldGenerationController.roomLocations = new List<KeyValuePair<int, int>>();
+    else
+      worldGenerationController.roomLocations.Clear();
+
+    Vector2Int startPos = new Vector2Int(0, 0);
+    // Do NOT call CreateRoomAt here!
+    StartCoroutine(GenerateRoomLayoutWithStaticsCoroutine());
   }
 
-  void CreateTilemap(KeyValuePair<int, int> location)
+  List<Vector2Int> FindPath(Vector2Int start, Vector2Int end, HashSet<Vector2Int> blocked)
   {
-    emptyTilemap = mapContainer.transform.Find("EmptyTilemap").gameObject;
-    emptyTilemap.GetComponent<MapGenerator>().currentBiomeGenerator = biomeGenerator;
-    floorTilemap = emptyTilemap.transform.Find("FloorTilemap").GetComponent<Tilemap>();
-    wallTilemap = emptyTilemap.transform.Find("WallTilemap").GetComponent<Tilemap>();
-    decorationTilemap = emptyTilemap.transform.Find("DecorationTilemap").GetComponent<Tilemap>();
-    waterTilemap = emptyTilemap.transform.Find("WaterTilemap").GetComponent<Tilemap>();
-    GameObject tilemap = GameObject.Instantiate(mapContainer, new Vector3(currentRoomLocation.Key, currentRoomLocation.Value, 10), transform.rotation);
-    tilemap.GetComponent<TextMeshPro>().text = location.Key + ", " + location.Value + "\n" + currentDirection;
-    for (var x = 0; x < 60; x++)
+    Queue<Vector2Int> queue = new Queue<Vector2Int>();
+    Dictionary<Vector2Int, Vector2Int> cameFrom = new Dictionary<Vector2Int, Vector2Int>();
+    queue.Enqueue(start);
+    cameFrom[start] = start;
+
+    Vector2Int[] dirs = cardinalDirections;
+
+    while (queue.Count > 0)
     {
-      for (var y = 0; y < 60; y++)
+      var current = queue.Dequeue();
+      if (current == end)
       {
-        floorTilemap.GetComponent<Tilemap>().SetTile(new Vector3Int(x, y, 0), tile);
+        // Reconstruct path
+        List<Vector2Int> path = new List<Vector2Int>();
+        while (current != start)
+        {
+          path.Add(current);
+          current = cameFrom[current];
+        }
+        path.Reverse();
+        return path;
+      }
+      foreach (var dir in dirs)
+      {
+        Vector2Int next = current + dir;
+        if (!cameFrom.ContainsKey(next) && !blocked.Contains(next))
+        {
+          queue.Enqueue(next);
+          cameFrom[next] = current;
+        }
       }
     }
+    return null; // No path found
   }
 
-  void CreateTilemapLocations()
+  System.Collections.IEnumerator GenerateRoomLayoutWithStaticsCoroutine()
   {
-    foreach (var room in worldGenerationController.roomLocations)
+    HashSet<Vector2Int> roomPositions = new HashSet<Vector2Int>();
+    Dictionary<Vector2Int, GameObject> staticRoomPrefabs = new Dictionary<Vector2Int, GameObject>();
+    roomEntrances.Clear();
+
+    Vector2Int startPos = Vector2Int.zero;
+
+    // 1. Place all static rooms (if any)
+    foreach (var staticRoom in staticRooms)
     {
-      Debug.Log("X: " + room.Key + " Y: " + room.Value + "\n" + "Current Room Location: " + currentRoomLocation.Key + ", " + currentRoomLocation.Value);
+      if (staticRoom.prefab == null)
+      {
+        Debug.LogError($"Static room at {staticRoom.position} is missing a prefab. All static rooms must have a prefab.");
+        continue;
+      }
+      // Snap position to the nearest room grid cell in world coordinates.
+      // This handles inputs that are already world coordinates (e.g. 380) or cell indices.
+      int gridX = Mathf.RoundToInt(staticRoom.position.x / (float)roomWidth);
+      int gridY = Mathf.RoundToInt(staticRoom.position.y / (float)roomHeight);
+      Vector2Int worldPos = new Vector2Int(gridX * roomWidth, gridY * roomHeight);
+      if (worldPos != staticRoom.position)
+      {
+        Debug.Log($"WorldGenerator: snapping static room {staticRoom.position} -> grid ({gridX},{gridY}) -> world {worldPos}");
+      }
+
+      roomPositions.Add(worldPos);
+      staticRoomPrefabs[worldPos] = staticRoom.prefab;
+      if (!roomEntrances.ContainsKey(worldPos))
+        roomEntrances[worldPos] = new HashSet<Vector2Int>();
     }
-    for (var x = 0; x < 10; x++)
+    // Log normalized static rooms for debugging
+    Debug.Log($"WorldGenerator: staticRooms provided={staticRooms.Count}, normalized placed={staticRoomPrefabs.Count}");
+    foreach (var kv in staticRoomPrefabs)
     {
-      System.Random rnd = new System.Random();
-      int randomNumber = rnd.Next(0, 4);
-      Debug.Log(randomNumber);
-      currentDirection = directionDictionary[randomNumber];
-      if (currentDirection == Direction.NORTH && !worldGenerationController.roomLocations.Contains(new KeyValuePair<int, int>((int)Mathf.Floor(((currentRoomLocation.Key + 60) / 60) * 60), currentRoomLocation.Value)))
+      Debug.Log($"WorldGenerator: static room at {kv.Key} -> prefab={(kv.Value != null ? kv.Value.name : "<null>")}");
+    }
+
+    // If there are no static rooms, seed with a start position so procedural generation can proceed
+    if (roomPositions.Count == 0)
+    {
+      roomPositions.Add(startPos);
+      if (!roomEntrances.ContainsKey(startPos))
+        roomEntrances[startPos] = new HashSet<Vector2Int>();
+    }
+
+    // 2. Connect static rooms with simple axis-aligned paths (pairwise).
+    // Step in room-grid cells (divide positions by roomWidth/roomHeight) to avoid mismatch and infinite loops.
+    if (staticRooms != null && staticRooms.Count >= 2)
+    {
+      for (int i = 0; i < staticRooms.Count - 1; i++)
       {
-        currentRoomLocation = new KeyValuePair<int, int>((int)Mathf.Floor(((transform.position.x + 60) / 60) * 60), (int)transform.position.y);
-        transform.position = new Vector3(currentRoomLocation.Key, currentRoomLocation.Value);
-        worldGenerationController.roomLocations.Add(new KeyValuePair<int, int>(currentRoomLocation.Key, currentRoomLocation.Value));
-        CreateTilemap(currentRoomLocation);
+        Vector2Int fromWorld = staticRooms[i].position;
+        Vector2Int toWorld = staticRooms[i + 1].position;
+        // Convert to cell coords
+        int fromCellX = Mathf.RoundToInt((float)fromWorld.x / roomWidth);
+        int fromCellY = Mathf.RoundToInt((float)fromWorld.y / roomHeight);
+        int toCellX = Mathf.RoundToInt((float)toWorld.x / roomWidth);
+        int toCellY = Mathf.RoundToInt((float)toWorld.y / roomHeight);
+
+        Vector2Int curCell = new Vector2Int(fromCellX, fromCellY);
+        int safety = 0;
+        int maxSteps = 1000;
+        // Step horizontally then vertically in cell space
+        while (curCell.x != toCellX && safety < maxSteps)
+        {
+          safety++;
+          int sign = (toCellX > curCell.x) ? 1 : -1;
+          curCell.x += sign;
+          Vector2Int worldPos = new Vector2Int(curCell.x * roomWidth, curCell.y * roomHeight);
+          roomPositions.Add(worldPos);
+          if (!roomEntrances.ContainsKey(worldPos)) roomEntrances[worldPos] = new HashSet<Vector2Int>();
+          if ((safety & 63) == 0) yield return null; // yield occasionally
+        }
+        safety = 0;
+        while (curCell.y != toCellY && safety < maxSteps)
+        {
+          safety++;
+          int sign = (toCellY > curCell.y) ? 1 : -1;
+          curCell.y += sign;
+          Vector2Int worldPos = new Vector2Int(curCell.x * roomWidth, curCell.y * roomHeight);
+          roomPositions.Add(worldPos);
+          if (!roomEntrances.ContainsKey(worldPos)) roomEntrances[worldPos] = new HashSet<Vector2Int>();
+          if ((safety & 63) == 0) yield return null; // yield occasionally
+        }
       }
-      else if (currentDirection == Direction.SOUTH && !worldGenerationController.roomLocations.Contains(new KeyValuePair<int, int>((int)Mathf.Floor(((currentRoomLocation.Key - 60) / 60) * 60), currentRoomLocation.Value)))
+    }
+
+    // 3. Add more procedural rooms up to targetRooms
+    System.Random rnd = new System.Random();
+    if (roomPositions.Count == 0)
+    {
+      roomPositions.Add(startPos);
+      if (!roomEntrances.ContainsKey(startPos))
+        roomEntrances[startPos] = new HashSet<Vector2Int>();
+    }
+
+    int maxAttempts = Mathf.Min(targetRooms * 100, 10000);
+    int attempts = 0;
+    int innerLoopCounter = 0;
+    while (roomPositions.Count < targetRooms && attempts < maxAttempts)
+    {
+      bool addedAny = false;
+      var baseRoomList = new List<Vector2Int>(roomPositions);
+      if (baseRoomList.Count == 0)
+        break;
+      Debug.Log($"WorldGenerator: attempt={attempts}, rooms={roomPositions.Count}, baseRooms={baseRoomList.Count}");
+
+      foreach (var baseRoom in baseRoomList)
       {
-        currentRoomLocation = new KeyValuePair<int, int>((int)Mathf.Floor(((transform.position.x - 60) / 60) * 60), (int)transform.position.y);
-        transform.position = new Vector3(currentRoomLocation.Key, currentRoomLocation.Value);
-        worldGenerationController.roomLocations.Add(new KeyValuePair<int, int>(currentRoomLocation.Key, currentRoomLocation.Value));
-        CreateTilemap(currentRoomLocation);
+        var possibleDirs = new List<Vector2Int>(cardinalDirections);
+        // Shuffle directions for randomness
+        for (int i = possibleDirs.Count - 1; i > 0; i--)
+        {
+          int j = rnd.Next(i + 1);
+          var temp = possibleDirs[i];
+          possibleDirs[i] = possibleDirs[j];
+          possibleDirs[j] = temp;
+        }
+        foreach (var dir in possibleDirs)
+        {
+          Vector2Int newRoomOrigin = baseRoom + dir;
+          if (!roomPositions.Contains(newRoomOrigin))
+          {
+            roomPositions.Add(newRoomOrigin);
+            if (!roomEntrances.ContainsKey(newRoomOrigin))
+              roomEntrances[newRoomOrigin] = new HashSet<Vector2Int>();
+            addedAny = true;
+            Debug.Log($"WorldGenerator: added room {newRoomOrigin} from base {baseRoom}");
+            break;
+          }
+        }
+        if (roomPositions.Count >= targetRooms)
+          break;
       }
-      else if (currentDirection == Direction.EAST && !worldGenerationController.roomLocations.Contains(new KeyValuePair<int, int>(currentRoomLocation.Key, (int)Mathf.Floor(((currentRoomLocation.Value + 60) / 60) * 60))))
+      attempts++;
+      innerLoopCounter++;
+      if ((innerLoopCounter & 127) == 0) // yield occasionally to avoid freezing (every 128 iterations)
       {
-        currentRoomLocation = new KeyValuePair<int, int>((int)transform.position.x, (int)Mathf.Floor(((transform.position.y + 60) / 60) * 60));
-        transform.position = new Vector3(currentRoomLocation.Key, currentRoomLocation.Value);
-        worldGenerationController.roomLocations.Add(new KeyValuePair<int, int>(currentRoomLocation.Key, currentRoomLocation.Value));
-        CreateTilemap(currentRoomLocation);
+        yield return null;
       }
-      else if (currentDirection == Direction.WEST && !worldGenerationController.roomLocations.Contains(new KeyValuePair<int, int>(currentRoomLocation.Key, (int)Mathf.Floor(((currentRoomLocation.Value - 60) / 60) * 60))))
+      if (!addedAny)
       {
-        currentRoomLocation = new KeyValuePair<int, int>((int)transform.position.x, (int)Mathf.Floor(((transform.position.y - 60) / 60) * 60));
-        transform.position = new Vector3(currentRoomLocation.Key, currentRoomLocation.Value);
-        worldGenerationController.roomLocations.Add(new KeyValuePair<int, int>(currentRoomLocation.Key, currentRoomLocation.Value));
-        CreateTilemap(currentRoomLocation);
+        if (roomPositions.Count < targetRooms)
+        {
+          Debug.LogWarning($"WorldGenerator: Only able to generate {roomPositions.Count} rooms out of requested {targetRooms}. Expansion blocked by static room layout or map boundaries.");
+        }
+        break;
       }
+    }
+
+    // 4. Build entrance sets for all rooms (mutual)
+    foreach (var pos in roomPositions)
+    {
+      if (!roomEntrances.ContainsKey(pos))
+        roomEntrances[pos] = new HashSet<Vector2Int>();
+
+      foreach (var dir in cardinalDirections)
+      {
+        Vector2Int neighbor = pos + dir;
+        if (roomPositions.Contains(neighbor))
+        {
+          roomEntrances[pos].Add(dir);
+          if (!roomEntrances.ContainsKey(neighbor))
+            roomEntrances[neighbor] = new HashSet<Vector2Int>();
+          roomEntrances[neighbor].Add(-dir);
+        }
+      }
+    }
+
+    // 5. Prune entrances that do not connect to an actual room
+    foreach (var kvp in new List<KeyValuePair<Vector2Int, HashSet<Vector2Int>>>(roomEntrances))
+    {
+      Vector2Int roomPos = kvp.Key;
+      var toRemove = new List<Vector2Int>();
+      foreach (var dir in kvp.Value)
+      {
+        Vector2Int neighbor = roomPos + dir;
+        if (!roomPositions.Contains(neighbor))
+          toRemove.Add(dir);
+      }
+      foreach (var dir in toRemove)
+        kvp.Value.Remove(dir);
+    }
+
+    // 6. Instantiate rooms (static prefabs where provided, skip if prefab is null)
+    foreach (var pos in roomPositions)
+    {
+      GameObject prefab = staticRoomPrefabs.ContainsKey(pos) ? staticRoomPrefabs[pos] : mapContainer;
+      CreateRoomAt(pos, roomEntrances.ContainsKey(pos) ? roomEntrances[pos] : new HashSet<Vector2Int>(), prefab);
+      // small yield to avoid long frame when instantiating many rooms
+      yield return null;
+    }
+
+    yield break;
+  }
+
+  GeneratorConfig GetBiomeForY(int y)
+  {
+    if (y < -roomHeight) return desertConfig;
+    if (y > roomHeight) return tundraConfig;
+    return forestConfig;
+  }
+
+  void GenerateRoomLayout(Vector2Int startPos)
+  {
+    System.Random rnd = new System.Random();
+    HashSet<Vector2Int> roomPositions = new HashSet<Vector2Int> { startPos };
+    List<(Vector2Int pos, Vector2Int? fromDir)> frontier = new List<(Vector2Int, Vector2Int?)>();
+    HashSet<Vector2Int> frontierSet = new HashSet<Vector2Int>();
+    roomEntrances.Clear();
+
+    // Add all cardinal neighbors of the start room to the frontier, with their direction
+    foreach (var dir in cardinalDirections)
+    {
+      Vector2Int neighbor = startPos + dir;
+      frontier.Add((neighbor, dir));
+      frontierSet.Add(neighbor);
+    }
+
+    int roomsCreated = 1;
+    while (roomsCreated < targetRooms && frontier.Count > 0)
+    {
+      int pickIdx = rnd.Next(frontier.Count);
+      var (newRoomPos, prevDir) = frontier[pickIdx];
+      frontier.RemoveAt(pickIdx);
+      frontierSet.Remove(newRoomPos);
+
+      bool isAdjacent = false;
+      foreach (var dir in cardinalDirections)
+      {
+        if (roomPositions.Contains(newRoomPos + dir))
+        {
+          isAdjacent = true;
+          break;
+        }
+      }
+      if (!isAdjacent)
+        continue;
+
+      List<Vector2Int> possibleDirs = new List<Vector2Int>();
+      foreach (var dir in cardinalDirections)
+      {
+        Vector2Int neighbor = newRoomPos + dir;
+        if (!roomPositions.Contains(neighbor) && !frontierSet.Contains(neighbor))
+        {
+          if (prevDir.HasValue && dir == prevDir.Value)
+          {
+            possibleDirs.Add(dir);
+            possibleDirs.Add(dir);
+            possibleDirs.Add(dir);
+          }
+          possibleDirs.Add(dir);
+        }
+      }
+
+      List<Vector2Int> branchDirs = new List<Vector2Int>();
+      Vector2Int? mainDir = null;
+      if (possibleDirs.Count > 0)
+      {
+        mainDir = possibleDirs[rnd.Next(possibleDirs.Count)];
+        branchDirs.Add(mainDir.Value);
+      }
+
+      if (rnd.NextDouble() < 0.2)
+      {
+        List<Vector2Int> forkDirs = new List<Vector2Int>(cardinalDirections);
+        forkDirs.RemoveAll(d =>
+            (mainDir.HasValue && d == mainDir.Value) ||
+            roomPositions.Contains(newRoomPos + d) ||
+            frontierSet.Contains(newRoomPos + d)
+        );
+        int extraBranches = rnd.Next(1, 3);
+        for (int i = 0; i < extraBranches && forkDirs.Count > 0; i++)
+        {
+          int forkIdx = rnd.Next(forkDirs.Count);
+          Vector2Int forkDir = forkDirs[forkIdx];
+          forkDirs.RemoveAt(forkIdx);
+          branchDirs.Add(forkDir);
+        }
+      }
+
+      roomPositions.Add(newRoomPos);
+      worldGenerationController.roomLocations.Add(new KeyValuePair<int, int>(newRoomPos.x, newRoomPos.y));
+
+      if (!roomEntrances.ContainsKey(newRoomPos))
+        roomEntrances[newRoomPos] = new HashSet<Vector2Int>();
+      if (prevDir.HasValue)
+        roomEntrances[newRoomPos].Add(-prevDir.Value);
+
+      foreach (var dir in cardinalDirections)
+      {
+        Vector2Int neighbor = newRoomPos + dir;
+        if (roomPositions.Contains(neighbor))
+        {
+          roomEntrances[newRoomPos].Add(dir);
+          if (!roomEntrances.ContainsKey(neighbor))
+            roomEntrances[neighbor] = new HashSet<Vector2Int>();
+          roomEntrances[neighbor].Add(-dir);
+        }
+      }
+
+      foreach (var dir in branchDirs)
+      {
+        roomEntrances[newRoomPos].Add(dir);
+      }
+
+      foreach (var dir in branchDirs)
+      {
+        Vector2Int neighbor = newRoomPos + dir;
+        if (!roomEntrances.ContainsKey(neighbor))
+          roomEntrances[neighbor] = new HashSet<Vector2Int>();
+        roomEntrances[neighbor].Add(-dir);
+
+        if (!roomPositions.Contains(neighbor) && !frontierSet.Contains(neighbor))
+        {
+          frontier.Add((neighbor, dir));
+          frontierSet.Add(neighbor);
+        }
+      }
+
+      roomsCreated++;
+    }
+
+    // PRUNE: Remove entrances that do not connect to an actual placed room
+    foreach (var kvp in roomEntrances)
+    {
+      Vector2Int roomPos = kvp.Key;
+      var toRemove = new List<Vector2Int>();
+      foreach (var dir in kvp.Value)
+      {
+        Vector2Int neighbor = roomPos + dir;
+        if (!roomPositions.Contains(neighbor))
+        {
+          toRemove.Add(dir);
+        }
+      }
+      foreach (var dir in toRemove)
+      {
+        kvp.Value.Remove(dir);
+      }
+    }
+
+    // Instantiate all rooms (including start room) after pruning
+    foreach (var roomPos in roomPositions)
+    {
+      bool isStartRoom = roomPos == startPos;
+      // CreateRoomAt(roomPos, roomEntrances[roomPos], prefab);
     }
   }
 
-  // Update is called once per frame
+  void CreateRoomAt(Vector2Int gridPos, HashSet<Vector2Int> entrances, GameObject prefab)
+  {
+
+    Vector3 worldPos = new Vector3(gridPos.x, gridPos.y, 0);
+    GameObject roomObj = Instantiate(prefab, worldPos, Quaternion.identity);
+    // If this is the mapContainer prefab, unhide it (set active)
+    if (prefab == mapContainer && roomObj != null)
+    {
+      roomObj.SetActive(true);
+    }
+
+    MapGenerator mapGen = roomObj.GetComponentInChildren<MapGenerator>();
+    if (mapGen == null)
+    {
+      Debug.LogError("MapGenerator component not found in room prefab!");
+      return;
+    }
+
+    // Use biome based on Y
+    mapGen.currentBiomeGenerator = GetBiomeForY(gridPos.y);
+
+    mapGen.seed = System.Guid.NewGuid().ToString();
+    mapGen.useRandomSeed = false;
+
+    // Convert Vector2Int directions to MapGenerator.EntranceDirection[]
+    var entranceDirs = new List<MapGenerator.EntranceDirection>();
+    foreach (var dir in entrances)
+    {
+      var entrance = DirectionToEntrance(dir);
+      if (entrance != null)
+        entranceDirs.Add(entrance.Value);
+    }
+
+    // Pass entrance directions to MapGenerator
+    mapGen.SetEntrances(entranceDirs.ToArray());
+
+    // Store for later updates
+    roomMapGens[gridPos] = mapGen;
+  }
+
+  // Helper to convert Vector2Int to MapGenerator.EntranceDirection
+  MapGenerator.EntranceDirection? DirectionToEntrance(Vector2Int dir)
+  {
+    if (dir == new Vector2Int(0, roomHeight)) return MapGenerator.EntranceDirection.NORTH;
+    if (dir == new Vector2Int(roomWidth, 0)) return MapGenerator.EntranceDirection.EAST;
+    if (dir == new Vector2Int(0, -roomHeight)) return MapGenerator.EntranceDirection.SOUTH;
+    if (dir == new Vector2Int(-roomWidth, 0)) return MapGenerator.EntranceDirection.WEST;
+    return null;
+  }
   void Update()
   {
-
+    // (Optional) Add runtime logic here
   }
 }
+
+/*
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Tilemaps;
+using TMPro;
+
+public class WorldGenerator : MonoBehaviour
+{
+    public GameObject mapContainer; // Prefab or container for rooms
+    public GeneratorConfig biomeGenerator;
+    public WorldGenerationController worldGenerationController;
+
+    // Biome configs
+    public GeneratorConfig forestConfig;
+    public GeneratorConfig desertConfig;
+    public GeneratorConfig tundraConfig;
+    public int targetRooms = 10; // Number of rooms to generate
+
+    // Room size (should match MapGenerator's width/height)
+    public int roomWidth = 60;
+    public int roomHeight = 60;
+
+    // Directions: N, S, E, W
+    private Vector2Int[] cardinalDirections;
+    // For tracking which directions each room should have entrances
+    private Dictionary<Vector2Int, HashSet<Vector2Int>> roomEntrances = new Dictionary<Vector2Int, HashSet<Vector2Int>>();
+
+    void Start()
+    {
+        cardinalDirections = new Vector2Int[] {
+            new Vector2Int(0, roomHeight),    // Up
+            new Vector2Int(0, -roomHeight),   // Down
+            new Vector2Int(roomWidth, 0),     // Right
+            new Vector2Int(-roomWidth, 0)     // Left
+        };
+
+        // Clear previous room locations
+        if (worldGenerationController.roomLocations == null)
+            worldGenerationController.roomLocations = new List<KeyValuePair<int, int>>();
+        else
+            worldGenerationController.roomLocations.Clear();
+
+        // Start at (0,0)
+        Vector2Int startPos = new Vector2Int(0, 0);
+        worldGenerationController.roomLocations.Add(new KeyValuePair<int, int>(startPos.x, startPos.y));
+        roomEntrances[startPos] = new HashSet<Vector2Int>();
+        CreateRoomAt(startPos, roomEntrances[startPos], isStartRoom: true);
+
+        GenerateRoomLayout(startPos);
+    }
+
+    GeneratorConfig GetBiomeForY(int y)
+    {
+        if (y < -roomHeight) return desertConfig;
+        if (y > roomHeight) return tundraConfig;
+        return forestConfig;
+    }
+
+    void GenerateRoomLayout(Vector2Int startPos)
+    {
+        System.Random rnd = new System.Random();
+        HashSet<Vector2Int> roomPositions = new HashSet<Vector2Int> { startPos };
+        List<(Vector2Int pos, Vector2Int? fromDir)> frontier = new List<(Vector2Int, Vector2Int?)>();
+        HashSet<Vector2Int> frontierSet = new HashSet<Vector2Int>();
+
+        // Add all cardinal neighbors of the start room to the frontier, with their direction
+        foreach (var dir in cardinalDirections)
+        {
+            Vector2Int neighbor = startPos + dir;
+            frontier.Add((neighbor, dir));
+            frontierSet.Add(neighbor);
+        }
+
+        int roomsCreated = 1;
+        while (roomsCreated < targetRooms && frontier.Count > 0)
+        {
+            // Pick a random position from the frontier
+            int pickIdx = rnd.Next(frontier.Count);
+            var (newRoomPos, prevDir) = frontier[pickIdx];
+            frontier.RemoveAt(pickIdx);
+            frontierSet.Remove(newRoomPos);
+
+            // Only place if adjacent to an existing room
+            bool isAdjacent = false;
+            foreach (var dir in cardinalDirections)
+            {
+                if (roomPositions.Contains(newRoomPos + dir))
+                {
+                    isAdjacent = true;
+                    break;
+                }
+            }
+            if (!isAdjacent)
+                continue;
+
+            // Place the new room
+            roomPositions.Add(newRoomPos);
+            worldGenerationController.roomLocations.Add(new KeyValuePair<int, int>(newRoomPos.x, newRoomPos.y));
+
+            // Track entrance direction for this room (from parent)
+            if (!roomEntrances.ContainsKey(newRoomPos))
+                roomEntrances[newRoomPos] = new HashSet<Vector2Int>();
+            if (prevDir.HasValue)
+                roomEntrances[newRoomPos].Add(-prevDir.Value);
+
+            // Also, add the reverse direction to the parent room
+            Vector2Int parent = newRoomPos + (prevDir.HasValue ? prevDir.Value : Vector2Int.zero);
+            if (roomEntrances.ContainsKey(parent) && prevDir.HasValue)
+                roomEntrances[parent].Add(prevDir.Value);
+
+            CreateRoomAt(newRoomPos, roomEntrances[newRoomPos], isStartRoom: false);
+            roomsCreated++;
+
+            // Build a weighted list of possible directions
+            List<Vector2Int> possibleDirs = new List<Vector2Int>();
+            foreach (var dir in cardinalDirections)
+            {
+                Vector2Int neighbor = newRoomPos + dir;
+                if (!roomPositions.Contains(neighbor) && !frontierSet.Contains(neighbor))
+                {
+                    // Weight previous direction higher
+                    if (prevDir.HasValue && dir == prevDir.Value)
+                    {
+                        // Add the previous direction multiple times for higher chance
+                        possibleDirs.Add(dir);
+                        possibleDirs.Add(dir);
+                        possibleDirs.Add(dir); // 3x weight
+                    }
+                    possibleDirs.Add(dir); // 1x for all directions
+                }
+            }
+
+            // Pick the main branch direction with bias
+            if (possibleDirs.Count > 0)
+            {
+                var mainDir = possibleDirs[rnd.Next(possibleDirs.Count)];
+                Vector2Int mainBranchNeighbor = newRoomPos + mainDir;
+                frontier.Add((mainBranchNeighbor, mainDir));
+                frontierSet.Add(mainBranchNeighbor);
+            }
+
+            // With a small chance, add 1–2 extra random neighbors (forks)
+            if (rnd.NextDouble() < 0.2) // 20% chance to branch
+            {
+                List<Vector2Int> forkDirs = new List<Vector2Int>(cardinalDirections);
+                // Remove the main direction if it was added
+                forkDirs.RemoveAll(d => roomPositions.Contains(newRoomPos + d) || frontierSet.Contains(newRoomPos + d));
+                int extraBranches = rnd.Next(1, 3); // 1 or 2 extra branches
+                for (int i = 0; i < extraBranches && forkDirs.Count > 0; i++)
+                {
+                    int forkIdx = rnd.Next(forkDirs.Count);
+                    Vector2Int forkDir = forkDirs[forkIdx];
+                    forkDirs.RemoveAt(forkIdx);
+                    Vector2Int neighbor = newRoomPos + forkDir;
+                    frontier.Add((neighbor, forkDir));
+                    frontierSet.Add(neighbor);
+                }
+            }
+        }
+    }
+
+    void CreateRoomAt(Vector2Int gridPos, HashSet<Vector2Int> entrances, bool isStartRoom)
+    {
+        Vector3 worldPos = new Vector3(gridPos.x, gridPos.y, 0);
+        GameObject roomObj = Instantiate(mapContainer, worldPos, Quaternion.identity);
+
+        MapGenerator mapGen = roomObj.GetComponentInChildren<MapGenerator>();
+        if (mapGen == null)
+        {
+            Debug.LogError("MapGenerator component not found in room prefab!");
+            return;
+        }
+
+        // Use biome based on Y
+        mapGen.currentBiomeGenerator = GetBiomeForY(gridPos.y);
+
+        mapGen.seed = System.Guid.NewGuid().ToString();
+        mapGen.useRandomSeed = false;
+
+        // Convert Vector2Int directions to MapGenerator.EntranceDirection[]
+        var entranceDirs = new List<MapGenerator.EntranceDirection>();
+        foreach (var dir in entrances)
+        {
+            var entrance = DirectionToEntrance(dir);
+            if (entrance != null)
+                entranceDirs.Add(entrance.Value);
+        }
+
+        // Pass entrance directions to MapGenerator
+        mapGen.SetEntrances(entranceDirs.ToArray());
+    }
+
+    // Helper to convert Vector2Int to MapGenerator.EntranceDirection
+    MapGenerator.EntranceDirection? DirectionToEntrance(Vector2Int dir)
+    {
+        if (dir == new Vector2Int(0, roomHeight)) return MapGenerator.EntranceDirection.Up;
+        if (dir == new Vector2Int(roomWidth, 0)) return MapGenerator.EntranceDirection.Right;
+        if (dir == new Vector2Int(0, -roomHeight)) return MapGenerator.EntranceDirection.Down;
+        if (dir == new Vector2Int(-roomWidth, 0)) return MapGenerator.EntranceDirection.Left;
+        return null;
+    }
+
+    void Update()
+    {
+        // (Optional) Add runtime logic here
+    }
+}
+*/
