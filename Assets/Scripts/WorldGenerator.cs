@@ -9,6 +9,9 @@ public class WorldGenerator : MonoBehaviour
   public GameObject mapContainer; // Prefab or container for rooms
   public GeneratorConfig biomeGenerator;
   public WorldGenerationController worldGenerationController;
+  public UnityEngine.Transform player;
+  [Tooltip("How many room hops away to spawn decorations (1 = current + immediate neighbors)")]
+  public int spawnRoomRadius = 1;
 
   // Biome configs
   public GeneratorConfig forestConfig;
@@ -34,6 +37,14 @@ public class WorldGenerator : MonoBehaviour
   // For tracking which directions each room should have entrances
   private Dictionary<Vector2Int, HashSet<Vector2Int>> roomEntrances = new Dictionary<Vector2Int, HashSet<Vector2Int>>();
   private Dictionary<Vector2Int, MapGenerator> roomMapGens = new Dictionary<Vector2Int, MapGenerator>();
+  // Track which rooms currently have decorations active
+  private HashSet<Vector2Int> activeDecorationRooms = new HashSet<Vector2Int>();
+  private Vector2Int currentPlayerRoom = new Vector2Int(int.MinValue, int.MinValue);
+  // World-level room id mappings
+  private Dictionary<Vector2Int, int> roomOriginToId = new Dictionary<Vector2Int, int>();
+  private Dictionary<int, Vector2Int> roomIdToOrigin = new Dictionary<int, Vector2Int>();
+  private Dictionary<int, HashSet<int>> roomAdjacency = new Dictionary<int, HashSet<int>>();
+  private int nextRoomId = 0;
   void Start()
   {
     cardinalDirections = new Vector2Int[] {
@@ -285,6 +296,16 @@ public class WorldGenerator : MonoBehaviour
       yield return null;
     }
 
+    // After creating all rooms, build adjacency from the recorded origins to ensure
+    // static rooms (and any ordering differences) have mutual adjacency entries.
+    BuildAdjacencyFromOrigins();
+    // Pre-create persistent decorations for all rooms to avoid spikes when player
+    // enters a room. Start them hidden by default.
+    foreach (var kv in roomMapGens)
+    {
+      try { kv.Value.SpawnAllDecorationsPersistent(); } catch (System.Exception ex) { Debug.LogError($"WorldGenerator: error creating persistent decorations for {kv.Key}: {ex}"); }
+    }
+
     yield break;
   }
 
@@ -466,6 +487,18 @@ public class WorldGenerator : MonoBehaviour
     mapGen.seed = System.Guid.NewGuid().ToString();
     mapGen.useRandomSeed = false;
 
+    // Ensure the MapGenerator has a player reference for player-aware spawning
+    if (this.player != null)
+    {
+      mapGen.player = this.player;
+    }
+    else
+    {
+      var pgo = GameObject.FindWithTag("Player");
+      if (pgo != null)
+        mapGen.player = pgo.transform;
+    }
+
     // Convert Vector2Int directions to MapGenerator.EntranceDirection[]
     var entranceDirs = new List<MapGenerator.EntranceDirection>();
     foreach (var dir in entrances)
@@ -478,8 +511,28 @@ public class WorldGenerator : MonoBehaviour
     // Pass entrance directions to MapGenerator
     mapGen.SetEntrances(entranceDirs.ToArray());
 
-    // Store for later updates
+    // Assign a stable world-level room id and store mappings
+    int assignedId = nextRoomId++;
+    roomOriginToId[gridPos] = assignedId;
+    roomIdToOrigin[assignedId] = gridPos;
     roomMapGens[gridPos] = mapGen;
+    // tell the MapGenerator about its world id (public field added)
+    mapGen.worldRoomId = assignedId;
+
+    // initialize adjacency entry for this room
+    if (!roomAdjacency.ContainsKey(assignedId)) roomAdjacency[assignedId] = new HashSet<int>();
+    // record adjacency based on entrances (will be filled mutually when neighbors are created)
+    foreach (var dir in entrances)
+    {
+      Vector2Int neighborOrigin = gridPos + dir;
+      if (roomOriginToId.ContainsKey(neighborOrigin))
+      {
+        int nid = roomOriginToId[neighborOrigin];
+        roomAdjacency[assignedId].Add(nid);
+        if (!roomAdjacency.ContainsKey(nid)) roomAdjacency[nid] = new HashSet<int>();
+        roomAdjacency[nid].Add(assignedId);
+      }
+    }
   }
 
   // Helper to convert Vector2Int to MapGenerator.EntranceDirection
@@ -493,7 +546,153 @@ public class WorldGenerator : MonoBehaviour
   }
   void Update()
   {
-    // (Optional) Add runtime logic here
+    if (player == null)
+    {
+      var pgo = GameObject.FindWithTag("Player");
+      if (pgo != null) player = pgo.transform;
+      else return;
+    }
+
+    // Compute a snapped room origin near the player, then verify with a containment test
+    int cellX = Mathf.FloorToInt(player.position.x / (float)roomWidth);
+    int cellY = Mathf.FloorToInt(player.position.y / (float)roomHeight);
+    Vector2Int baseOrigin = new Vector2Int(cellX * roomWidth, cellY * roomHeight);
+
+    // Search nearby origins (3x3 grid) to handle edge cases where rounding or
+    // passage carving might place the player near the border between rooms.
+    Vector2Int foundOrigin = new Vector2Int(int.MinValue, int.MinValue);
+    for (int dx = -1; dx <= 1 && foundOrigin.x == int.MinValue; dx++)
+    {
+      for (int dy = -1; dy <= 1 && foundOrigin.x == int.MinValue; dy++)
+      {
+        Vector2Int candidate = baseOrigin + new Vector2Int(dx * roomWidth, dy * roomHeight);
+        if (roomMapGens.TryGetValue(candidate, out var mg))
+        {
+          if (mg.IsWorldPositionInsideRoom(player.position))
+          {
+            foundOrigin = candidate;
+            break;
+          }
+        }
+      }
+    }
+
+    Vector2Int playerRoomWorld = foundOrigin.x == int.MinValue ? baseOrigin : foundOrigin;
+
+    if (playerRoomWorld != currentPlayerRoom)
+    {
+      // Clear previous decorations by origin
+      var prev = new HashSet<Vector2Int>(activeDecorationRooms);
+      foreach (var origin in prev)
+      {
+        if (roomMapGens.TryGetValue(origin, out var mg))
+        {
+          mg.ClearDecorations();
+        }
+      }
+      activeDecorationRooms.Clear();
+
+      // find the player room id
+      if (!roomOriginToId.TryGetValue(playerRoomWorld, out int playerRoomId))
+      {
+        currentPlayerRoom = playerRoomWorld;
+        return;
+      }
+
+      // BFS adjacency up to spawnRoomRadius to collect room ids to activate
+      HashSet<int> idsToActivate = new HashSet<int>();
+      Queue<(int id, int depth)> q = new Queue<(int, int)>();
+      q.Enqueue((playerRoomId, 0));
+      idsToActivate.Add(playerRoomId);
+      while (q.Count > 0)
+      {
+        var (id, depth) = q.Dequeue();
+        if (depth >= spawnRoomRadius) continue;
+        if (!roomAdjacency.TryGetValue(id, out var neigh)) continue;
+        foreach (var nid in neigh)
+        {
+          if (!idsToActivate.Contains(nid))
+          {
+            idsToActivate.Add(nid);
+            q.Enqueue((nid, depth + 1));
+          }
+        }
+      }
+
+  // Debug: log which rooms (ids) we're about to activate
+  Debug.Log($"WorldGenerator: playerRoomId={playerRoomId}, idsToActivate=[{string.Join(",", new List<int>(idsToActivate))}]");
+
+  // Activate rooms: spawn decorations and track active origins
+      // Capture player position once and defensively handle null
+      Vector3 playerPos = Vector3.zero;
+      if (player == null)
+      {
+        var pgo = GameObject.FindWithTag("Player");
+        if (pgo != null) player = pgo.transform;
+      }
+      if (player != null) playerPos = player.position;
+      else
+      {
+        Debug.LogWarning("WorldGenerator: player transform is null when activating decoration rooms");
+      }
+
+      // Show decorations only for activated rooms; hide previously active rooms
+      foreach (var origin in activeDecorationRooms)
+      {
+        if (roomMapGens.TryGetValue(origin, out var oldMg))
+        {
+          try { oldMg.ShowDecorations(false); } catch (System.Exception ex) { Debug.LogError($"WorldGenerator: error hiding decorations for {origin}: {ex}"); }
+        }
+      }
+      activeDecorationRooms.Clear();
+
+      foreach (var id in idsToActivate)
+      {
+        if (!roomIdToOrigin.TryGetValue(id, out var origin))
+        {
+          Debug.LogWarning($"WorldGenerator: no origin for room id {id}");
+          continue;
+        }
+        if (!roomMapGens.TryGetValue(origin, out var mg))
+        {
+          Debug.LogWarning($"WorldGenerator: no MapGenerator at origin {origin} for room id {id}");
+          continue;
+        }
+        try
+        {
+          mg.ShowDecorations(true);
+        }
+        catch (System.Exception ex)
+        {
+          Debug.LogError($"WorldGenerator: error showing decorations for {origin}: {ex}");
+        }
+        activeDecorationRooms.Add(origin);
+      }
+
+      currentPlayerRoom = playerRoomWorld;
+    }
+  }
+
+  // Rebuild adjacency by scanning neighbors of every known origin. This makes
+  // adjacency robust when rooms (especially static rooms) were created in any order.
+  void BuildAdjacencyFromOrigins()
+  {
+    roomAdjacency.Clear();
+    foreach (var kv in roomOriginToId)
+    {
+      var origin = kv.Key;
+      int id = kv.Value;
+      if (!roomAdjacency.ContainsKey(id)) roomAdjacency[id] = new HashSet<int>();
+      foreach (var dir in cardinalDirections)
+      {
+        var neighbor = origin + dir;
+        if (roomOriginToId.TryGetValue(neighbor, out var nid))
+        {
+          roomAdjacency[id].Add(nid);
+        }
+      }
+    }
+    Debug.Log($"WorldGenerator: Built adjacency for {roomAdjacency.Count} rooms");
   }
 }
 
@@ -689,6 +888,19 @@ public class WorldGenerator : MonoBehaviour
 
         // Pass entrance directions to MapGenerator
         mapGen.SetEntrances(entranceDirs.ToArray());
+
+        // Assign world-level id mapping for this room origin
+        Vector2Int origin = new Vector2Int((int)worldPos.x, (int)worldPos.y);
+        if (!roomOriginToId.ContainsKey(origin))
+        {
+          int assignedId = nextRoomId++;
+          roomOriginToId[origin] = assignedId;
+          roomIdToOrigin[assignedId] = origin;
+          if (!roomAdjacency.ContainsKey(assignedId)) roomAdjacency[assignedId] = new HashSet<int>();
+        }
+        mapGen.worldRoomId = roomOriginToId[origin];
+
+        // Per-room enemy spawning is handled by MapGenerator.RenderMap when tiles are evaluated.
     }
 
     // Helper to convert Vector2Int to MapGenerator.EntranceDirection

@@ -39,7 +39,7 @@ public class Bolt : MonoBehaviour
     {
         if (currentBoltState == BoltState.FIRED)
         {
-            GetComponent<Rigidbody2D>().velocity = aimDirection * boltSpeed;
+            GetComponent<Rigidbody2D>().linearVelocity = aimDirection * boltSpeed;
             if (boltSpeed > 0)
             {
                 boltSpeed -= +Time.deltaTime * 2;
@@ -48,7 +48,7 @@ public class Bolt : MonoBehaviour
         }
         if (currentBoltState == BoltState.STUCK)
         {
-            GetComponent<Rigidbody2D>().velocity = new Vector2(stuckPosition.x, stuckPosition.y) * 0;
+            GetComponent<Rigidbody2D>().linearVelocity = new Vector2(stuckPosition.x, stuckPosition.y) * 0;
         }
     }
 }

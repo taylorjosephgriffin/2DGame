@@ -21,27 +21,118 @@ public class EnemySpawnGroup : ScriptableObject
   }
   public Vector2 GetNavigationPointWithinSpawnRadius()
   {
-    Vector2 offset = UnityEngine.Random.insideUnitCircle * spawnGroupIdleRadius;
-    Vector2 pos = spawnLocation + offset;
-    if (wallMap[(int)pos.x, (int)pos.y] == 1)
+    // Defensive: ensure wallMap exists and has dimensions
+    if (wallMap == null)
     {
-      return GetNavigationPointWithinSpawnRadius();
+      Debug.LogWarning("EnemySpawnGroup:GetNavigationPointWithinSpawnRadius - wallMap is null, returning spawnLocation");
+      return spawnLocation;
     }
-    return pos;
+    try
+    {
+      int dim0 = wallMap.GetLength(0);
+      int dim1 = wallMap.GetLength(1);
+      if (dim0 == 0 || dim1 == 0)
+      {
+        Debug.LogWarning("EnemySpawnGroup:GetNavigationPointWithinSpawnRadius - wallMap has zero dimension, returning spawnLocation");
+        return spawnLocation;
+      }
+
+      int maxAttempts = 20;
+      for (int attempt = 0; attempt < maxAttempts; attempt++)
+      {
+        Vector2 offset = UnityEngine.Random.insideUnitCircle * spawnGroupIdleRadius;
+        Vector2 pos = spawnLocation + offset;
+
+        int ix = Mathf.RoundToInt(pos.x);
+        int iy = Mathf.RoundToInt(pos.y);
+
+        // Bounds check
+        if (ix < 0 || iy < 0 || ix >= dim0 || iy >= dim1)
+        {
+          continue;
+        }
+
+        // If the cell exists and is not a wall (0 == free), return it
+        if (wallMap[ix, iy] == 0)
+        {
+          return pos;
+        }
+
+        // occupied by wall, try again
+      }
+    }
+    catch (System.Exception ex)
+    {
+      Debug.LogWarning($"EnemySpawnGroup:GetNavigationPointWithinSpawnRadius - exception: {ex}. Returning spawnLocation as fallback.");
+      return spawnLocation;
+    }
+
+    // Fallback if no valid nav point found
+    Debug.LogWarning("EnemySpawnGroup:GetNavigationPointWithinSpawnRadius - failed to find clear nav point after attempts, returning spawnLocation");
+    return spawnLocation;
   }
 
-  public void spawnEnemies(Vector2Int spawnLocation)
+  public void spawnEnemies(Vector2Int spawnLocation, Transform parent = null)
   {
+    if (enemyGroup == null || enemyGroup.Length == 0)
+    {
+      Debug.LogWarning("EnemySpawnGroup:spawnEnemies called but enemyGroup is null or empty");
+      return;
+    }
     for (int i = 0; i < enemyGroup.Length; i++)
     {
-      GameObject newEnemy = Instantiate(enemyGroup[i], GetPositionAroundObject(spawnLocation, 4), new Quaternion(0, 0, 0, 0));
-      if (newEnemy.GetComponent<EnemyController>() != null)
+      GameObject prefab = enemyGroup[i];
+      if (prefab == null)
       {
-        newEnemy.GetComponent<EnemyController>().spawnGroup = this;
+        Debug.LogWarning($"EnemySpawnGroup:spawnEnemies - enemy prefab at index {i} is null, skipping");
+        continue;
       }
-      if (newEnemy.GetComponent<DroneController>() != null)
+      Vector2 pos2 = GetPositionAroundObject(spawnLocation, 4);
+      Vector3 spawnPos = new Vector3(pos2.x, pos2.y, 0f);
+  GameObject newEnemy = parent != null ? Instantiate(prefab, spawnPos, Quaternion.identity, parent) : Instantiate(prefab, spawnPos, Quaternion.identity);
+      var ec = newEnemy.GetComponent<EnemyController>();
+      if (ec != null)
       {
-        newEnemy.GetComponent<DroneController>().spawnGroup = this;
+        ec.spawnGroup = this;
+      }
+      var dc = newEnemy.GetComponent<DroneController>();
+      if (dc != null)
+      {
+        dc.spawnGroup = this;
+      }
+    }
+  }
+
+  // Spawn enemies around a world-space position (used when MapGenerator wants to
+  // place enemies at the room's world coordinates). This avoids confusion
+  // between local tile indices and world-space coordinates.
+  public void spawnEnemiesAtWorldPosition(Vector2 worldPosition, Transform parent = null)
+  {
+    if (enemyGroup == null || enemyGroup.Length == 0)
+    {
+      Debug.LogWarning("EnemySpawnGroup:spawnEnemiesAtWorldPosition called but enemyGroup is null or empty");
+      return;
+    }
+    for (int i = 0; i < enemyGroup.Length; i++)
+    {
+      GameObject prefab = enemyGroup[i];
+      if (prefab == null)
+      {
+        Debug.LogWarning($"EnemySpawnGroup:spawnEnemiesAtWorldPosition - enemy prefab at index {i} is null, skipping");
+        continue;
+      }
+      Vector2 offset = UnityEngine.Random.insideUnitCircle * 4f;
+      Vector3 spawnPos = new Vector3(worldPosition.x + offset.x, worldPosition.y + offset.y, 0f);
+  GameObject newEnemy = parent != null ? Instantiate(prefab, spawnPos, Quaternion.identity, parent) : Instantiate(prefab, spawnPos, Quaternion.identity);
+      var ec = newEnemy.GetComponent<EnemyController>();
+      if (ec != null)
+      {
+        ec.spawnGroup = this;
+      }
+      var dc = newEnemy.GetComponent<DroneController>();
+      if (dc != null)
+      {
+        dc.spawnGroup = this;
       }
     }
   }

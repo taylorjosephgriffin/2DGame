@@ -53,6 +53,17 @@ public class MapGenerator : MonoBehaviour
   private Algorithm currentAlgorithm = Algorithm.STANDARD;
   private List<Vector2> renderedDestructables = new List<Vector2>();
   private List<Vector2> renderedSpawnGroups = new List<Vector2>();
+  // Generated rooms and helper data for per-room decoration spawning
+  private List<Room> generatedRooms = new List<Room>();
+  private int[,] roomIdMap;
+  private int currentPlayerRoomId = -1;
+  // world-level id assigned by WorldGenerator (optional)
+  public int worldRoomId = -1;
+  private GameObject decorationContainer;
+  private bool decorationsCreated = false;
+  // Enemy spawn selection: choose one group template per room and only spawn it once
+  private bool enemyGroupSpawned = false;
+  private EnemySpawnGroup selectedEnemySpawnGroupTemplate = null;
   Texture2D minimap;
   public Image miniMapSprite;
 
@@ -65,7 +76,25 @@ public class MapGenerator : MonoBehaviour
   {
     GenerateMap();
     AddDirectionalPassage();
+    // Choose a single enemy spawn group for this room (if the biome provides any)
+    if (currentBiomeGenerator != null && currentBiomeGenerator.enemySpawnGroups != null && currentBiomeGenerator.enemySpawnGroups.Length > 0)
+    {
+      int sel = UnityEngine.Random.Range(0, currentBiomeGenerator.enemySpawnGroups.Length);
+      selectedEnemySpawnGroupTemplate = currentBiomeGenerator.enemySpawnGroups[sel];
+      enemyGroupSpawned = false;
+    }
     RenderMap(map, floorTilemap, wallTilemap, currentBiomeGenerator.wallTile, currentBiomeGenerator.groundTiles);
+    // ensure player is on the map; if not, move to a valid floor tile
+    currentPlayerRoomId = GetPlayerRoomId();
+    if (currentPlayerRoomId == -1)
+    {
+      Debug.Log("[MapGenerator] Init: player not on map; moving player to first available floor tile.");
+      MovePlayer();
+      currentPlayerRoomId = GetPlayerRoomId();
+    }
+
+    // spawn decorations for the player's current room immediately after rendering
+    SpawnDecorationsForRoom(currentPlayerRoomId);
     for (int x = 0; x < width * 2; x++)
     {
       for (int y = 0; y < height * 2; y++)
@@ -201,6 +230,359 @@ public class MapGenerator : MonoBehaviour
       renderedSpawnGroups.Clear();
       Init();
     }
+    // Check if player moved rooms and spawn decorations for the active room only
+    int newRoom = GetPlayerRoomId();
+    if (newRoom != currentPlayerRoomId)
+    {
+      Debug.Log($"[MapGenerator] Player room changed: from={currentPlayerRoomId} to={newRoom}");
+      currentPlayerRoomId = newRoom;
+      SpawnDecorationsForRoom(currentPlayerRoomId);
+    }
+  }
+
+  int GetPlayerRoomId()
+  {
+    if (roomIdMap == null)
+    {
+      Debug.Log("[MapGenerator] GetPlayerRoomId: roomIdMap is null");
+      return -1;
+    }
+
+    if (player == null)
+    {
+      // try to auto-assign
+      var pgo = GameObject.FindWithTag("Player");
+      if (pgo != null)
+      {
+        player = pgo.transform;
+        Debug.Log("[MapGenerator] GetPlayerRoomId: auto-assigned player transform from tag 'Player'");
+      }
+      else
+      {
+        Debug.Log("[MapGenerator] GetPlayerRoomId: player is null and no GameObject with tag 'Player' found");
+        return -1;
+      }
+    }
+
+    // Preferred: use the Tilemap API to convert world position to a cell that
+    // lines up with our placed tiles. This handles overlay tiles (like shadows)
+    // which live on a separate tilemap but share the same cell grid.
+    Vector3 playerPos = player.position;
+    Vector3Int cell = floorTilemap.WorldToCell(playerPos);
+
+    // If there's no floor tile at the exact cell, but there is a decoration
+    // (shadow) tile, treat that cell as valid. Also, do a small neighborhood
+    // scan if both are missing (handles slight offsets).
+    TileBase floorTile = floorTilemap.GetTile(cell);
+    TileBase decorTile = decorationTilemap != null ? decorationTilemap.GetTile(cell) : null;
+
+    if (floorTile == null && decorTile == null)
+    {
+      // scan a 3x3 around the player cell for a matching tile
+      bool found = false;
+      for (int ox = -1; ox <= 1 && !found; ox++)
+      {
+        for (int oy = -1; oy <= 1 && !found; oy++)
+        {
+          Vector3Int c2 = new Vector3Int(cell.x + ox, cell.y + oy, cell.z);
+          if (!IsInMapRange(c2.x - Mathf.RoundToInt(transform.position.x), c2.y - Mathf.RoundToInt(transform.position.y))) continue;
+          if (floorTilemap.GetTile(c2) != null || (decorationTilemap != null && decorationTilemap.GetTile(c2) != null))
+          {
+            cell = c2;
+            found = true;
+            break;
+          }
+        }
+      }
+      if (!found)
+      {
+        Debug.Log($"[MapGenerator] GetPlayerRoomId: no floor or decoration tile found near player at {playerPos}");
+        return -1;
+      }
+    }
+
+    // Convert the tilemap cell to local map indices (map tiles were placed at
+    // world = transform.position + (x,y)). So subtract the room origin.
+    Vector3 origin = transform.position;
+    int originX = Mathf.RoundToInt(origin.x);
+    int originY = Mathf.RoundToInt(origin.y);
+    int px = cell.x - originX;
+    int py = cell.y - originY;
+
+    int rid = -1;
+    if (px >= 0 && px < width && py >= 0 && py < height)
+    {
+      rid = roomIdMap[px, py];
+    }
+    Debug.Log($"[MapGenerator] GetPlayerRoomId: playerPos={playerPos}, cell={cell}, origin={origin}, px={px}, py={py}, roomId={rid}");
+    return rid;
+  }
+
+  void ClearDecorationContainer()
+  {
+    if (decorationContainer != null)
+    {
+      if (decorationsCreated)
+      {
+        // For persistent decorations, just hide the container so we can ShowDecorations later
+        decorationContainer.SetActive(false);
+      }
+      else
+      {
+        // Non-persistent path: destroy the container
+        Destroy(decorationContainer);
+        decorationContainer = null;
+      }
+    }
+    // Only clear the runtime lists if we're not in persistent mode
+    if (!decorationsCreated)
+      renderedDestructables.Clear();
+  }
+
+  void SpawnDecorationsForRoom(int roomId, bool clearFirst = true)
+  {
+    if (clearFirst) ClearDecorationContainer();
+    if (decorationContainer == null)
+    {
+      decorationContainer = new GameObject("DecorationContainer");
+      decorationContainer.transform.parent = transform;
+    }
+
+    // Diagnostics and safety checks: surface why we might early-return
+    if (roomId < 0)
+    {
+      Debug.LogWarning($"[MapGenerator:{worldRoomId}] SpawnDecorationsForRoom: invalid roomId={roomId}");
+      return;
+    }
+    if (generatedRooms == null)
+    {
+      Debug.LogWarning($"[MapGenerator:{worldRoomId}] SpawnDecorationsForRoom: generatedRooms is null");
+      return;
+    }
+    if (roomId >= generatedRooms.Count)
+    {
+      Debug.LogWarning($"[MapGenerator:{worldRoomId}] SpawnDecorationsForRoom: roomId {roomId} >= generatedRooms.Count {generatedRooms.Count}");
+      return;
+    }
+    if (currentBiomeGenerator == null)
+    {
+      Debug.LogWarning($"[MapGenerator:{worldRoomId}] SpawnDecorationsForRoom: currentBiomeGenerator is null");
+      return;
+    }
+
+    System.Random pseudoRandom = new System.Random(seed.GetHashCode());
+    SortedDictionary<string, int> itemDictionary = new SortedDictionary<string, int>();
+    foreach (var item in currentBiomeGenerator.spawnItems) itemDictionary.Add(item.item.name, 0);
+    // Build a small set of rooms to spawn: the current room and its adjacent rooms
+    List<Room> roomsToSpawn = new List<Room>();
+    Room baseRoom = generatedRooms[roomId];
+    roomsToSpawn.Add(baseRoom);
+    Debug.Log($"[MapGenerator] SpawnDecorationsForRoom: baseRoomId={roomId}, baseSize={baseRoom.roomSize}, connectedCount={baseRoom.connectedRooms.Count}");
+
+    // Find neighboring room IDs by scanning a perimeter around the room's bounding box.
+    // This catches rooms separated by narrow corridors or 1-cell gaps that edgeTiles neighbor-check misses.
+    HashSet<int> neighborIds = new HashSet<int>();
+    int minX = int.MaxValue, maxX = int.MinValue, minY = int.MaxValue, maxY = int.MinValue;
+    foreach (Coord ct in baseRoom.tiles)
+    {
+      if (ct.tileX < minX) minX = ct.tileX;
+      if (ct.tileX > maxX) maxX = ct.tileX;
+      if (ct.tileY < minY) minY = ct.tileY;
+      if (ct.tileY > maxY) maxY = ct.tileY;
+    }
+
+    // scan a 1-cell perimeter outside the bounding box (expand by 1)
+    int scanMinX = Mathf.Max(0, minX - 1);
+    int scanMaxX = Mathf.Min(width - 1, maxX + 1);
+    int scanMinY = Mathf.Max(0, minY - 1);
+    int scanMaxY = Mathf.Min(height - 1, maxY + 1);
+
+    for (int sx = scanMinX; sx <= scanMaxX; sx++)
+    {
+      for (int sy = scanMinY; sy <= scanMaxY; sy++)
+      {
+        // only consider perimeter
+        if (sx > minX && sx < maxX && sy > minY && sy < maxY) continue;
+        int rid = roomIdMap[sx, sy];
+        if (rid != -1 && rid != roomId) neighborIds.Add(rid);
+      }
+    }
+
+    foreach (int nid in neighborIds)
+    {
+      if (nid >= 0 && nid < generatedRooms.Count)
+      {
+        roomsToSpawn.Add(generatedRooms[nid]);
+        Debug.Log($"[MapGenerator] SpawnDecorationsForRoom: adding neighbor room {nid} (size={generatedRooms[nid].roomSize})");
+      }
+    }
+
+    // Iterate each room's tiles and spawn decorations
+    foreach (Room room in roomsToSpawn)
+    {
+      int tilesScanned = 0;
+      int grassCandidates = 0;
+      int itemsSpawned = 0;
+      int skippedByChance = 0;
+      int skippedByProximity = 0;
+      int skippedByWallProximity = 0;
+      int skippedByMax = 0;
+
+      foreach (Coord t in room.tiles)
+      {
+        int x = t.tileX;
+        int y = t.tileY;
+        if (map[x, y] != 0) continue;
+        tilesScanned++;
+
+        int randomNumber = UnityEngine.Random.Range(0, 100);
+        float scale = UnityEngine.Random.Range(1, 1.1f);
+
+        var floorTile = floorTilemap.GetTile(new Vector3Int(x, y, 0));
+        if (floorTile != null && floorTile.name == currentBiomeGenerator.grassSpawnTile.name)
+        {
+          grassCandidates++;
+          Vector3 worldPos = transform.TransformPoint(new Vector3(x, y, 0));
+          GameObject newItem = Instantiate(currentBiomeGenerator.grassItem.item, worldPos, Quaternion.identity, decorationContainer.transform);
+          newItem.transform.localScale = new Vector3(scale, scale, 1);
+          renderedDestructables.Add(new Vector2(x, y));
+          itemsSpawned++;
+          Debug.Log($"[MapGenerator] Instantiated grass '{currentBiomeGenerator.grassItem.item.name}' at {worldPos} for room spawn (roomId={roomId})");
+        }
+
+        foreach (var item in currentBiomeGenerator.spawnItems)
+        {
+          bool passedChance = pseudoRandom.Next(0, 100) < item.chance;
+          bool passedProximity = ObjectAreClearFromOtherObjects(renderedDestructables, x, y, item.minRadius);
+          bool passedWallClear = ObjectsAreClearFromWalls(x, y, 3);
+          bool underMax = itemDictionary[item.item.name] < item.max;
+
+          if (!passedChance) { skippedByChance++; continue; }
+          if (!passedProximity) { skippedByProximity++; continue; }
+          if (!passedWallClear) { skippedByWallProximity++; continue; }
+          if (!underMax) { skippedByMax++; continue; }
+
+          Vector3 worldPos = transform.TransformPoint(new Vector3(x, y, 0));
+          GameObject newItem = Instantiate(item.item, worldPos, Quaternion.identity, decorationContainer.transform);
+          newItem.transform.localScale = new Vector3(scale, scale, 1);
+          renderedDestructables.Add(new Vector2(x, y));
+          itemDictionary[item.item.name] = itemDictionary[item.item.name] + 1;
+          itemsSpawned++;
+          Debug.Log($"[MapGenerator] Instantiated '{item.item.name}' at {worldPos} for room spawn (roomId={roomId})");
+        }
+      }
+
+      Debug.Log($"[MapGenerator] Spawn diagnostics for room (size={room.roomSize}): tilesScanned={tilesScanned}, grassCandidates={grassCandidates}, itemsSpawned={itemsSpawned}, skippedChance={skippedByChance}, skippedProximity={skippedByProximity}, skippedWall={skippedByWallProximity}, skippedMax={skippedByMax}");
+    }
+  }
+
+  // Spawn all decorations for every generated room in this MapGenerator without
+  // clearing between rooms. Useful when the world manager wants the entire
+  // room filled (e.g., neighbor rooms).
+  public void SpawnAllDecorationsInMap()
+  {
+    // Create the decoration container and spawn decorations for all rooms.
+    // This method is idempotent for repeated calls (it will recreate the
+    // container each time). For persistent pre-creation use
+    // SpawnAllDecorationsPersistent().
+    ClearDecorationContainer();
+    decorationContainer = new GameObject("DecorationContainer");
+    decorationContainer.transform.parent = transform;
+
+    if (generatedRooms == null || generatedRooms.Count == 0) return;
+
+    for (int i = 0; i < generatedRooms.Count; i++)
+    {
+      // call internal spawner with clearFirst=false so it appends into the same container
+      SpawnDecorationsForRoom(i, false);
+    }
+    decorationsCreated = true;
+  }
+
+  // Create decorations once and keep them in a persistent container. Safe to call
+  // from the world manager after rooms are instantiated.
+  public void SpawnAllDecorationsPersistent()
+  {
+    if (decorationsCreated) return;
+    SpawnAllDecorationsInMap();
+    decorationsCreated = true;
+    if (decorationContainer != null)
+      decorationContainer.SetActive(false); // start hidden
+  }
+
+  // Show or hide the decorations container for this map.
+  public void ShowDecorations(bool visible)
+  {
+    if (decorationContainer == null)
+    {
+      // If decorations haven't been created yet, create them now (persistent)
+      SpawnAllDecorationsPersistent();
+    }
+    if (decorationContainer != null)
+      decorationContainer.SetActive(visible);
+  }
+
+  // Public wrapper so an external manager (WorldGenerator) can request spawning
+  public void SpawnDecorationsAroundPlayer()
+  {
+    int rid = GetPlayerRoomId();
+    SpawnDecorationsForRoom(rid);
+  }
+
+  // Spawn decorations for the room that contains the given world position.
+  // This is a player-position-independent API so the world manager can call
+  // it even if the MapGenerator.player reference is not set.
+  public void SpawnDecorationsAtWorldPosition(Vector3 worldPos)
+  {
+    // Convert worldPos to a local cell and map indices using the Tilemap
+    Vector3Int cell = floorTilemap.WorldToCell(worldPos);
+    Vector3 origin = transform.position;
+    int originX = Mathf.RoundToInt(origin.x);
+    int originY = Mathf.RoundToInt(origin.y);
+    int px = cell.x - originX;
+    int py = cell.y - originY;
+
+    int rid = -1;
+    if (px >= 0 && px < width && py >= 0 && py < height)
+    {
+      rid = roomIdMap[px, py];
+    }
+    // Fallback: if no rid, try neighbor cells 3x3
+    if (rid == -1)
+    {
+      for (int ox = -1; ox <= 1 && rid == -1; ox++)
+      {
+        for (int oy = -1; oy <= 1 && rid == -1; oy++)
+        {
+          int nx = px + ox;
+          int ny = py + oy;
+          if (nx >= 0 && nx < width && ny >= 0 && ny < height)
+            rid = roomIdMap[nx, ny];
+        }
+      }
+    }
+
+    SpawnDecorationsForRoom(rid);
+  }
+
+  // Public wrapper to clear decorations from this map (used by external manager)
+  public void ClearDecorations()
+  {
+    ClearDecorationContainer();
+  }
+
+  // Return true if the given world position lies within this MapGenerator's
+  // tile bounds. This is used by WorldGenerator to robustly determine which
+  // room the player is inside (avoids relying on rounding alone).
+  public bool IsWorldPositionInsideRoom(Vector3 worldPos)
+  {
+    // The MapGenerator is instantiated at the room's world origin (transform.position)
+    Vector3 origin = transform.position;
+    float localX = worldPos.x - origin.x;
+    float localY = worldPos.y - origin.y;
+    int px = Mathf.FloorToInt(localX);
+    int py = Mathf.FloorToInt(localY);
+    return (px >= 0 && px < width && py >= 0 && py < height);
   }
 
   public int[,] runAlgorithm()
@@ -289,9 +671,85 @@ public class MapGenerator : MonoBehaviour
       }
     }
     survivingRooms.Sort();
-    survivingRooms[0].isMainRoom = true;
-    survivingRooms[0].isAccessibleFromMainRoom = true;
+    if (survivingRooms.Count > 0)
+    {
+      survivingRooms[0].isMainRoom = true;
+      survivingRooms[0].isAccessibleFromMainRoom = true;
+    }
+
+    // store generated rooms and build a roomId map for per-room decoration spawning
+    generatedRooms = survivingRooms;
+    roomIdMap = new int[width, height];
+    for (int x = 0; x < width; x++)
+    {
+      for (int y = 0; y < height; y++)
+      {
+        roomIdMap[x, y] = -1;
+      }
+    }
+    for (int i = 0; i < generatedRooms.Count; i++)
+    {
+      foreach (Coord t in generatedRooms[i].tiles)
+      {
+        roomIdMap[t.tileX, t.tileY] = i;
+      }
+    }
+
     ConnectClosestRooms(survivingRooms);
+
+    // After connecting rooms (which may carve passages into the map), recompute regions
+    // so roomIdMap reflects the final map layout (including created passages).
+    List<List<Coord>> finalRoomRegions = GetRegions(0);
+    List<Room> finalRooms = new List<Room>();
+    foreach (List<Coord> roomRegion in finalRoomRegions)
+    {
+      if (roomRegion.Count < roomThresholdSize)
+      {
+        // small regions are ignored (they become walls)
+        continue;
+      }
+      finalRooms.Add(new Room(roomRegion, map));
+    }
+    finalRooms.Sort();
+    if (finalRooms.Count > 0)
+    {
+      finalRooms[0].isMainRoom = true;
+      finalRooms[0].isAccessibleFromMainRoom = true;
+    }
+
+    generatedRooms = finalRooms;
+
+    // Build roomIdMap from finalRooms
+    roomIdMap = new int[width, height];
+    for (int x = 0; x < width; x++)
+    {
+      for (int y = 0; y < height; y++)
+      {
+        roomIdMap[x, y] = -1;
+      }
+    }
+    for (int i = 0; i < generatedRooms.Count; i++)
+    {
+      foreach (Coord t in generatedRooms[i].tiles)
+      {
+        roomIdMap[t.tileX, t.tileY] = i;
+      }
+    }
+
+    // Debug: log room connectivity for diagnosis
+    try
+    {
+      Debug.Log($"[MapGenerator] ProcessMap: final generatedRooms={generatedRooms.Count}");
+      for (int i = 0; i < generatedRooms.Count; i++)
+      {
+        var r = generatedRooms[i];
+        Debug.Log($"[MapGenerator] Room {i}: size={r.roomSize}, connected={r.connectedRooms.Count}");
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.Log("[MapGenerator] Error logging room connectivity: " + ex.Message);
+    }
   }
 
   void ConnectClosestRooms(List<Room> allRooms, bool forceAccessibilityFromMainRoom = false)
@@ -531,9 +989,9 @@ public class MapGenerator : MonoBehaviour
   }
 
   public void SetEntrances(EntranceDirection[] dirs)
-{
+  {
     directions = dirs;
-}
+  }
 
   public int[,] RandomWalkTopSmoothed(int[,] map, string seed, int minSectionWidth)
   {
@@ -672,34 +1130,8 @@ public class MapGenerator : MonoBehaviour
           float scale = UnityEngine.Random.Range(1, 1.1f);
           int dictval;
           floorTilemap.SetTile(new Vector3Int(x, y, 0), groundTiles[pseudoRandom.Next(1, groundTiles.Length)]);
-          if (floorTilemap.GetTile(new Vector3Int(x, y, 0)).name == currentBiomeGenerator.grassSpawnTile.name)
-          {
-            GameObject newItem = Instantiate(currentBiomeGenerator.grassItem.item, new Vector3Int(x + (int)transform.GetComponentInParent<UnityEngine.Transform>().position.x, y + (int)transform.GetComponentInParent<UnityEngine.Transform>().position.y, 0), new Quaternion(0, 0, 0, 0));
-            newItem.transform.localScale = new Vector3(scale, scale, 1);
-          }
-          foreach (var item in currentBiomeGenerator.spawnItems)
-          {
-            if (pseudoRandom.Next(0, 100) < item.chance && ObjectAreClearFromOtherObjects(renderedDestructables, x, y, item.minRadius) &&
-              ObjectsAreClearFromWalls(x, y, 3) && itemDictionary[item.item.name] < item.max)
-            {
-              if (itemDictionary.TryGetValue(item.item.name, out dictval))
-              {
-                if (itemDictionary[item.item.name] < item.max)
-                {
-                  GameObject newItem = Instantiate(item.item, new Vector3Int(x + (int)transform.GetComponentInParent<UnityEngine.Transform>().position.x, y + (int)transform.GetComponentInParent<UnityEngine.Transform>().position.y, 0), new Quaternion(0, 0, 0, 0));
-                  newItem.transform.localScale = new Vector3(scale, scale, 1);
-                  renderedDestructables.Add(new Vector2(x, y));
-                  randomNumber = UnityEngine.Random.Range(0, 100);
-                }
-              }
-              if (itemDictionary.TryGetValue(item.item.name, out dictval))
-              {
-                itemDictionary.Remove(item.item.name);
-                itemDictionary.Add(item.item.name, dictval + 1);
-              }
-
-            }
-          }
+          // GameObject decorations (grass, destructables, spawn items) are deferred to per-room spawning.
+          // This keeps RenderMap focused on tilemap rendering and minimap generation.
           //if (currentBiomeGenerator.tree != null && pseudoRandom.Next(0, 100) < currentBiomeGenerator.treeChance &&
           //    ObjectAreClearFromOtherObjects(renderedDestructables, x, y, 5) &&
           //    ObjectsAreClearFromWalls(x, y, 3))
@@ -735,13 +1167,22 @@ public class MapGenerator : MonoBehaviour
               ObjectsAreClearFromWalls(x, y, 5))
           {
 
-            // EnemySpawnGroup newEnemy = Instantiate(currentBiomeGenerator.enemySpawnGroups[0]);
-            // newEnemy.spawnEnemies(new Vector2Int(x, y));
-            // newEnemy.spawnLocation = new Vector2Int(x, y);
-            // newEnemy.wallMap = map;
-            // renderedSpawnGroups.Add(new Vector2(x, y));
-            // minimap.SetPixel(x, y, new Color32(86, 255, 85, 255));
-            // randomNumber = UnityEngine.Random.Range(0, 100);
+            // Instantiate an EnemySpawnGroup asset so it has its own runtime data,
+            // assign the spawn location and wallMap, then spawn the enemies.
+            // Use the per-room selected template if available; spawn only once per room
+            if (!enemyGroupSpawned && selectedEnemySpawnGroupTemplate != null)
+            {
+              EnemySpawnGroup runtimeGroup = Instantiate(selectedEnemySpawnGroupTemplate);
+              runtimeGroup.spawnLocation = new Vector2Int(x, y);
+              runtimeGroup.wallMap = map;
+              // Convert local tile coordinates to world-space position using this MapGenerator's transform
+              Vector3 worldTilePos = transform.TransformPoint(new Vector3(x, y, 0));
+              runtimeGroup.spawnEnemiesAtWorldPosition(new Vector2(worldTilePos.x, worldTilePos.y), transform);
+              renderedSpawnGroups.Add(new Vector2(x, y));
+              minimap.SetPixel(x, y, new Color32(86, 255, 85, 255));
+              enemyGroupSpawned = true;
+              randomNumber = UnityEngine.Random.Range(0, 100);
+            }
           }
         }
       }
