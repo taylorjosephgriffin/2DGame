@@ -669,6 +669,19 @@ public class WorldGenerator : MonoBehaviour
         activeDecorationRooms.Add(origin);
       }
 
+      // Update the UI minimap to show the room the player is currently in (if available)
+      if (roomMapGens.TryGetValue(playerRoomWorld, out var currentRoomMapGen))
+      {
+        try
+        {
+          currentRoomMapGen.SetMinimapToUI();
+        }
+        catch (System.Exception ex)
+        {
+          Debug.LogWarning($"WorldGenerator: failed to set minimap for room {playerRoomWorld}: {ex}");
+        }
+      }
+
       currentPlayerRoom = playerRoomWorld;
     }
   }

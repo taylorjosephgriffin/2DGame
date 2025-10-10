@@ -66,6 +66,8 @@ public class MapGenerator : MonoBehaviour
   private EnemySpawnGroup selectedEnemySpawnGroupTemplate = null;
   Texture2D minimap;
   public Image miniMapSprite;
+  // Cached Sprite generated from the minimap texture for quick UI assignment
+  private Sprite minimapSpriteAsset;
 
   void Start()
   {
@@ -1078,9 +1080,10 @@ public class MapGenerator : MonoBehaviour
     //Loop through the width of the map
     System.Random pseudoRandom = new System.Random(seed.GetHashCode());
     GameObject colliderContainer = new GameObject();
-    Texture2D minimap = new Texture2D(width, height);
-    minimap.filterMode = FilterMode.Point;
-    minimap.wrapMode = TextureWrapMode.Clamp;
+  // store on the instance so other systems can reference it
+  minimap = new Texture2D(width, height);
+  minimap.filterMode = FilterMode.Point;
+  minimap.wrapMode = TextureWrapMode.Clamp;
     SortedDictionary<string, int> itemDictionary = new SortedDictionary<string, int>();
     foreach (var item in currentBiomeGenerator.spawnItems)
     {
@@ -1128,7 +1131,6 @@ public class MapGenerator : MonoBehaviour
           minimap.SetPixel(x, y, new Color32(54, 94, 150, 255));
           int randomNumber = UnityEngine.Random.Range(0, 100);
           float scale = UnityEngine.Random.Range(1, 1.1f);
-          int dictval;
           floorTilemap.SetTile(new Vector3Int(x, y, 0), groundTiles[pseudoRandom.Next(1, groundTiles.Length)]);
           // GameObject decorations (grass, destructables, spawn items) are deferred to per-room spawning.
           // This keeps RenderMap focused on tilemap rendering and minimap generation.
@@ -1188,7 +1190,39 @@ public class MapGenerator : MonoBehaviour
       }
     }
     minimap.Apply();
-    miniMapSprite.sprite = Sprite.Create(minimap, new Rect(0, 0, width, height), Vector2.zero, 100);
+    try
+    {
+      minimapSpriteAsset = Sprite.Create(minimap, new Rect(0, 0, width, height), Vector2.zero, 100);
+      if (miniMapSprite != null)
+        miniMapSprite.sprite = minimapSpriteAsset;
+    }
+    catch (Exception ex)
+    {
+      Debug.LogWarning("[MapGenerator] Failed to create minimap sprite: " + ex.Message);
+    }
+  }
+
+  // Make this room's minimap the active UI sprite (if UI Image assigned)
+  public void SetMinimapToUI()
+  {
+    if (miniMapSprite == null)
+    {
+      // Nothing to set
+      return;
+    }
+    if (minimapSpriteAsset != null)
+    {
+      miniMapSprite.sprite = minimapSpriteAsset;
+    }
+    else
+    {
+      // If sprite not yet generated, try to create it from texture
+      if (minimap != null)
+      {
+        minimapSpriteAsset = Sprite.Create(minimap, new Rect(0, 0, width, height), Vector2.zero, 100);
+        miniMapSprite.sprite = minimapSpriteAsset;
+      }
+    }
   }
 
   void RandomFillMap()
