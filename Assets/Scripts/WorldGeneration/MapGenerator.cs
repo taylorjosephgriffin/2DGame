@@ -18,11 +18,189 @@ public class MapGenerator : MonoBehaviour
 
     NONE
   }
+  
+  // Public helper to clear and regenerate decorative water on demand (usable from editor buttons)
+  public void RegenerateDecorativeWater()
+  {
+    if (waterTilemap == null)
+    {
+      Debug.LogWarning("[MapGenerator] RegenerateDecorativeWater: waterTilemap is not assigned.");
+      return;
+    }
+    if (currentBiomeGenerator == null)
+    {
+      Debug.LogWarning("[MapGenerator] RegenerateDecorativeWater: currentBiomeGenerator is null.");
+      return;
+    }
+    try
+    {
+      // Clear existing decorative water and rerun the generator with the current seed
+      waterTilemap.ClearAllTiles();
+      System.Random pseudoRandom = new System.Random(seed.GetHashCode());
+      GenerateDecorativeWater(pseudoRandom, currentBiomeGenerator.groundTiles);
+    }
+    catch (Exception ex)
+    {
+      Debug.LogWarning($"[MapGenerator] RegenerateDecorativeWater failed: {ex}");
+    }
+  }
+
+  // Generate decorative water features (puddles / thin rivers) on the waterTilemap.
+  // Uses the provided pseudoRandom so results are deterministic per-map seed.
+  void GenerateDecorativeWater(System.Random pseudoRandom, TileBase[] groundTiles)
+  {
+    if (waterTilemap == null || currentBiomeGenerator == null) return;
+    TileBase water = currentBiomeGenerator.waterTile as TileBase;
+    TileBase waterEdge = currentBiomeGenerator.waterEdgeTile as TileBase;
+    if (water == null) return;
+
+    int attemptsBase = Mathf.Clamp(width * height / Mathf.Max(1, waterAttemptsDivisor), waterAttemptsMin, waterAttemptsMax);
+    for (int a = 0; a < attemptsBase; a++)
+    {
+      // pick a random floor tile biased toward near walls (neighbourWallTiles > 0)
+      int sx = pseudoRandom.Next(0, width);
+      int sy = pseudoRandom.Next(0, height);
+      // prefer tiles with at least one adjacent wall (looks like puddles at edges)
+      int tries = 0;
+      while (tries < 30 && (map[sx, sy] != 0 || GetSurroundingWallCount(sx, sy) == 0))
+      {
+        sx = pseudoRandom.Next(0, width);
+        sy = pseudoRandom.Next(0, height);
+        tries++;
+      }
+      if (map[sx, sy] != 0) continue;
+
+      // BFS/expansion to create a small cluster or thin river
+      int size = pseudoRandom.Next(waterClusterMinSize, Mathf.Clamp(width / 8, waterClusterMinSize, waterClusterMaxSize));
+      // Decide whether this attempt should bias toward a river-like chain
+      bool riverMode = pseudoRandom.NextDouble() < waterRiverChance;
+
+      // Queue holds current position and the incoming direction (0,0 for none)
+      Queue<(Vector2Int pos, Vector2Int incoming)> q = new Queue<(Vector2Int, Vector2Int)>();
+      HashSet<Vector2Int> painted = new HashSet<Vector2Int>();
+      q.Enqueue((new Vector2Int(sx, sy), new Vector2Int(0, 0)));
+      while (q.Count > 0 && painted.Count < size)
+      {
+        var entry = q.Dequeue();
+        var p = entry.pos;
+        var incoming = entry.incoming;
+        if (!IsInMapRange(p.x, p.y)) continue;
+        if (map[p.x, p.y] != 0) continue; // only on floor
+        if (painted.Contains(p)) continue;
+        // place water with some noise chance
+        if (pseudoRandom.NextDouble() < waterPlaceChance)
+        {
+          waterTilemap.SetTile(new Vector3Int(p.x, p.y, 0), water);
+          painted.Add(p);
+        }
+        // push neighbors with bias to continue chains (river-like)
+        var baseDirs = new List<Vector2Int> { new Vector2Int(1,0), new Vector2Int(-1,0), new Vector2Int(0,1), new Vector2Int(0,-1)};
+        // If riverMode and we have an incoming direction, bias continuation in that direction
+        List<Vector2Int> orderedDirs = new List<Vector2Int>(baseDirs);
+        if (riverMode && incoming != new Vector2Int(0, 0))
+        {
+          // move the straight direction to the front and weight it
+          orderedDirs.Remove(incoming);
+          orderedDirs.Insert(0, incoming);
+        }
+        // shuffle non-first entries to add variety
+        for (int i = (orderedDirs.Count > 0 && riverMode && incoming != new Vector2Int(0,0)) ? 1 : 0; i < orderedDirs.Count; i++)
+        {
+          var j = pseudoRandom.Next(i, orderedDirs.Count);
+          var tmp = orderedDirs[i]; orderedDirs[i] = orderedDirs[j]; orderedDirs[j] = tmp;
+        }
+
+        foreach (var d in orderedDirs)
+        {
+          var np = new Vector2Int(p.x + d.x, p.y + d.y);
+          if (!IsInMapRange(np.x, np.y) || map[np.x, np.y] != 0 || painted.Contains(np)) continue;
+
+          double enqueueProb = waterNeighborEnqueueChance;
+          // If riverMode, favor continuing straight (incoming == d) according to direction bias
+          if (riverMode && incoming != new Vector2Int(0, 0))
+          {
+            if (d == incoming) enqueueProb = Math.Min(1.0, enqueueProb + waterDirectionBias);
+            else enqueueProb = enqueueProb * (1.0 - waterDirectionBias);
+          }
+
+          if (pseudoRandom.NextDouble() < enqueueProb)
+          {
+            // store the direction for the neighbor so it knows the direction we used to reach it
+            q.Enqueue((np, d));
+          }
+        }
+      }
+
+      // paint edges for aesthetic if provided
+      if (waterEdge != null && waterPaintEdges)
+      {
+        foreach (var p in painted)
+        {
+          foreach (var d in new List<Vector2Int>{new Vector2Int(1,0), new Vector2Int(-1,0), new Vector2Int(0,1), new Vector2Int(0,-1)})
+          {
+            int nx = p.x + d.x; int ny = p.y + d.y;
+            if (!IsInMapRange(nx, ny)) continue;
+            if (map[nx, ny] != 0) continue;
+            if (!painted.Contains(new Vector2Int(nx, ny)) && waterTilemap.GetTile(new Vector3Int(nx, ny, 0)) == null)
+            {
+              if (pseudoRandom.NextDouble() < waterEdgePlacementChance)
+                waterTilemap.SetTile(new Vector3Int(nx, ny, 0), waterEdge);
+            }
+          }
+        }
+      }
+    }
+  }
   public EntranceDirection direction;
   public EntranceDirection[] directions;
   public EntranceDirection playerStartingPosition;
 
-  public Tilemap wallTilemap, floorTilemap, shadowTilemap, backgroundWallTilemap;
+  public Tilemap wallTilemap, floorTilemap, shadowTilemap, waterTilemap;
+
+  [Header("Water Generation")]
+  [Tooltip("Divisor used to compute baseline water generation attempts: attempts = Clamp(width*height / divisor, minAttempts, maxAttempts)")]
+  [SerializeField]
+  private int waterAttemptsDivisor = 400;
+  [SerializeField]
+  private int waterAttemptsMin = 3;
+  [SerializeField]
+  private int waterAttemptsMax = 20;
+
+  [Tooltip("Minimum cluster size for a water feature (puddles/rivers)")]
+  [SerializeField]
+  private int waterClusterMinSize = 3;
+  [Tooltip("Maximum cluster size for a water feature (puddles/rivers)")]
+  [SerializeField]
+  private int waterClusterMaxSize = 16;
+
+  [Range(0f, 1f)]
+  [Tooltip("Chance to actually place a water tile when a cluster expansion visits a cell")]
+  [SerializeField]
+  private float waterPlaceChance = 0.85f;
+
+  [Range(0f, 1f)]
+  [Tooltip("Chance to enqueue neighboring floor tiles when expanding a water cluster (higher -> more river-like chains)")]
+  [SerializeField]
+  private float waterNeighborEnqueueChance = 0.7f;
+
+  [Range(0f, 1f)]
+  [Tooltip("Chance that a generation attempt will bias toward a river-like (chain) feature instead of a blob")]
+  [SerializeField]
+  private float waterRiverChance = 0.25f;
+
+  [Range(0f, 1f)]
+  [Tooltip("Directional bias when expanding: how much more likely expansion continues straight vs turning (0 = no bias, 1 = strong straight-line bias)")]
+  [SerializeField]
+  private float waterDirectionBias = 0.75f;
+
+  [Tooltip("Enable painting water edge tiles when a water tile borders non-water floor tiles")]
+  [SerializeField]
+  private bool waterPaintEdges = true;
+
+  [Range(0f, 1f)]
+  [Tooltip("Per-edge chance to place an explicit edge tile when painting water edges")]
+  [SerializeField]
+  private float waterEdgePlacementChance = 1.0f;
 
   [HideInInspector]
   // Controlled by WorldGenerator: when false, MapGenerator will not spawn enemies.
@@ -102,13 +280,13 @@ public class MapGenerator : MonoBehaviour
 
     // spawn decorations for the player's current room immediately after rendering
     SpawnDecorationsForRoom(currentPlayerRoomId);
-    for (int x = 0; x < width * 2; x++)
-    {
-      for (int y = 0; y < height * 2; y++)
-      {
-        backgroundWallTilemap.SetTile(new Vector3Int(x, y, 0), currentBiomeGenerator.wallTile);
-      }
-    }
+    // for (int x = 0; x < width * 2; x++)
+    // {
+    //   for (int y = 0; y < height * 2; y++)
+    //   {
+    //     backgroundWallTilemap.SetTile(new Vector3Int(x, y, 0), currentBiomeGenerator.wallTile);
+    //   }
+    // }
   }
 
   struct Coord
@@ -1119,8 +1297,10 @@ public class MapGenerator : MonoBehaviour
     //Clear the map (ensures we dont overlap)
     floorTilemap.ClearAllTiles();
     wallTilemap.ClearAllTiles();
-    // Shadow tilemap is part of core tile rendering and should always be rebuilt
-    if (shadowTilemap != null) shadowTilemap.ClearAllTiles();
+  // Shadow tilemap is part of core tile rendering and should always be rebuilt
+  if (shadowTilemap != null) shadowTilemap.ClearAllTiles();
+  // Water is decorative; clear water tilemap so we can repaint decorative rivers/puddles
+  if (waterTilemap != null) waterTilemap.ClearAllTiles();
     // GameObject decorations are handled via the decoration container and
     // `spawnDecorations` / global toggles; tilemap shadows live in
     // `shadowTilemap` and are cleared above.
@@ -1254,6 +1434,15 @@ public class MapGenerator : MonoBehaviour
       }
     }
     minimap.Apply();
+    // Decorative water generation (puddles/rivers) - deterministic per-seed
+    try
+    {
+      GenerateDecorativeWater(pseudoRandom, groundTiles);
+    }
+    catch (Exception ex)
+    {
+      Debug.LogWarning($"[MapGenerator] GenerateDecorativeWater failed: {ex}");
+    }
     try
     {
       minimapSpriteAsset = Sprite.Create(minimap, new Rect(0, 0, width, height), Vector2.zero, 100);
