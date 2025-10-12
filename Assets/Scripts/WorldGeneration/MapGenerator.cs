@@ -22,13 +22,18 @@ public class MapGenerator : MonoBehaviour
   public EntranceDirection[] directions;
   public EntranceDirection playerStartingPosition;
 
-  public Tilemap wallTilemap, floorTilemap, decorationTilemap, backgroundWallTilemap;
+  public Tilemap wallTilemap, floorTilemap, shadowTilemap, backgroundWallTilemap;
 
-  public bool shouldSpawnEnemies;
+  [HideInInspector]
+  // Controlled by WorldGenerator: when false, MapGenerator will not spawn enemies.
+  public bool shouldSpawnEnemies = true;
 
   public UnityEngine.Transform player;
 
   public GeneratorConfig currentBiomeGenerator;
+  [HideInInspector]
+  // Controlled by WorldGenerator: when true, MapGenerator will skip decoration generation.
+  public bool spawnDecorations = false;
   [SerializeField]
   private int width;
   [SerializeField]
@@ -276,7 +281,7 @@ public class MapGenerator : MonoBehaviour
     // (shadow) tile, treat that cell as valid. Also, do a small neighborhood
     // scan if both are missing (handles slight offsets).
     TileBase floorTile = floorTilemap.GetTile(cell);
-    TileBase decorTile = decorationTilemap != null ? decorationTilemap.GetTile(cell) : null;
+    TileBase decorTile = shadowTilemap != null ? shadowTilemap.GetTile(cell) : null;
 
     if (floorTile == null && decorTile == null)
     {
@@ -288,7 +293,7 @@ public class MapGenerator : MonoBehaviour
         {
           Vector3Int c2 = new Vector3Int(cell.x + ox, cell.y + oy, cell.z);
           if (!IsInMapRange(c2.x - Mathf.RoundToInt(transform.position.x), c2.y - Mathf.RoundToInt(transform.position.y))) continue;
-          if (floorTilemap.GetTile(c2) != null || (decorationTilemap != null && decorationTilemap.GetTile(c2) != null))
+          if (floorTilemap.GetTile(c2) != null || (shadowTilemap != null && shadowTilemap.GetTile(c2) != null))
           {
             cell = c2;
             found = true;
@@ -341,8 +346,38 @@ public class MapGenerator : MonoBehaviour
       renderedDestructables.Clear();
   }
 
+  // Destroy enemy GameObjects that were spawned under this MapGenerator's transform.
+  // This helps when a global toggle disables enemy spawning after rooms have
+  // already been generated; we remove existing spawned enemies to respect the
+  // global setting.
+  public void ClearSpawnedEnemies()
+  {
+    try
+    {
+      var enemies = GameObject.FindGameObjectsWithTag("Enemy");
+      foreach (var e in enemies)
+      {
+        if (e == null) continue;
+        // If the enemy is a child (any depth) of this MapGenerator's root, destroy it
+        if (e.transform.IsChildOf(this.transform))
+        {
+          Destroy(e);
+        }
+      }
+    }
+    catch (System.Exception ex)
+    {
+      Debug.LogWarning($"[MapGenerator] ClearSpawnedEnemies failed: {ex}");
+    }
+  }
+
   void SpawnDecorationsForRoom(int roomId, bool clearFirst = true)
   {
+    if (spawnDecorations)
+    {
+      Debug.Log($"[MapGenerator] SpawnDecorationsForRoom: spawnDecorations is true, skipping spawn for room {roomId}.");
+      return;
+    }
     if (clearFirst) ClearDecorationContainer();
     if (decorationContainer == null)
     {
@@ -483,6 +518,11 @@ public class MapGenerator : MonoBehaviour
   // room filled (e.g., neighbor rooms).
   public void SpawnAllDecorationsInMap()
   {
+    if (spawnDecorations)
+    {
+      Debug.Log("[MapGenerator] SpawnAllDecorationsInMap: spawnDecorations is true, skipping decoration spawn.");
+      return;
+    }
     // Create the decoration container and spawn decorations for all rooms.
     // This method is idempotent for repeated calls (it will recreate the
     // container each time). For persistent pre-creation use
@@ -522,6 +562,9 @@ public class MapGenerator : MonoBehaviour
     }
     if (decorationContainer != null)
       decorationContainer.SetActive(visible);
+    // Note: shadow tiles live on `shadowTilemap` and are intentionally always
+    // visible and rebuilt on RenderMap. Only the GameObject decoration
+    // container is toggled here.
   }
 
   // Public wrapper so an external manager (WorldGenerator) can request spawning
@@ -1076,14 +1119,18 @@ public class MapGenerator : MonoBehaviour
     //Clear the map (ensures we dont overlap)
     floorTilemap.ClearAllTiles();
     wallTilemap.ClearAllTiles();
-    decorationTilemap.ClearAllTiles();
+    // Shadow tilemap is part of core tile rendering and should always be rebuilt
+    if (shadowTilemap != null) shadowTilemap.ClearAllTiles();
+    // GameObject decorations are handled via the decoration container and
+    // `spawnDecorations` / global toggles; tilemap shadows live in
+    // `shadowTilemap` and are cleared above.
     //Loop through the width of the map
     System.Random pseudoRandom = new System.Random(seed.GetHashCode());
     GameObject colliderContainer = new GameObject();
-  // store on the instance so other systems can reference it
-  minimap = new Texture2D(width, height);
-  minimap.filterMode = FilterMode.Point;
-  minimap.wrapMode = TextureWrapMode.Clamp;
+    // store on the instance so other systems can reference it
+    minimap = new Texture2D(width, height);
+    minimap.filterMode = FilterMode.Point;
+    minimap.wrapMode = TextureWrapMode.Clamp;
     SortedDictionary<string, int> itemDictionary = new SortedDictionary<string, int>();
     foreach (var item in currentBiomeGenerator.spawnItems)
     {
@@ -1100,21 +1147,38 @@ public class MapGenerator : MonoBehaviour
         {
           minimap.SetPixel(x, y, new Color32(13, 42, 81, 255));
 
+
           wallTilemap.SetTile(new Vector3Int(x, y, 0), wallTile);
 
-          if ((wallTilemap.GetSprite(new Vector3Int(x, y, 0)) == currentBiomeGenerator.wallTileThatNeedsShadow.sprite || wallTilemap.GetSprite(new Vector3Int(x, y, 0)) == currentBiomeGenerator.wallTileThatNeedsShadow2.sprite) &&
-              IsInMapRange(x, y - 1) &&
-              map[x, y - 1] == 0 && IsInMapRange(x, y
-              + 1) && map[x, y + 1] != 0)
+          // Determine whether decoration placement is allowed for this MapGenerator
+          bool decorationsEnabled = !spawnDecorations && !WorldGenerator.globalDisableDecorations;
+
+          // Safe-get the tile instance
+          TileBase placedWallTile = wallTilemap.GetTile(new Vector3Int(x, y, 0));
+          TileBase needShadowA = currentBiomeGenerator?.wallTileThatNeedsShadow;
+          TileBase needShadowB = currentBiomeGenerator?.wallTileThatNeedsShadow2;
+
+          // Compare by TileBase instance where possible, but fall back to sprite
+          // comparison to handle editor-imported tiles that may be different
+          // instances but share the same sprite asset.
+          bool instanceMatch = (placedWallTile != null) && (placedWallTile == needShadowA || placedWallTile == needShadowB);
+          Sprite placedSprite = wallTilemap.GetSprite(new Vector3Int(x, y, 0));
+          Sprite needASprite = (needShadowA as Tile)?.sprite;
+          Sprite needBSprite = (needShadowB as Tile)?.sprite;
+          bool spriteMatch = (placedSprite != null) && (placedSprite == needASprite || placedSprite == needBSprite);
+
+          bool wallNeedsShadow = decorationsEnabled && (instanceMatch || spriteMatch);
+
+          // If the tile should form a cliff (tile below is floor and above is wall), place the cliff tile and a shadow below
+          if (wallNeedsShadow && IsInMapRange(x, y - 1) && map[x, y - 1] == 0 && IsInMapRange(x, y + 1) && map[x, y + 1] != 0)
           {
             wallTilemap.SetTile(new Vector3Int(x, y, 0), currentBiomeGenerator.wallTileCliff);
-            decorationTilemap.SetTile(new Vector3Int(x, y - 1, 0), currentBiomeGenerator.wallTileShadow);
+            if (shadowTilemap != null && currentBiomeGenerator.wallTileShadow != null)
+              shadowTilemap.SetTile(new Vector3Int(x, y - 1, 0), currentBiomeGenerator.wallTileShadow);
           }
 
-          if ((wallTilemap.GetSprite(new Vector3Int(x, y, 0)) == currentBiomeGenerator.wallTileThatNeedsShadow.sprite || wallTilemap.GetSprite(new Vector3Int(x, y, 0)) == currentBiomeGenerator.wallTileThatNeedsShadow2.sprite) &&
-              IsInMapRange(x, y - 1) &&
-              map[x, y - 1] == 0 && IsInMapRange(x, y
-              + 1) && map[x, y + 1] == 0)
+          // If the tile should be converted to floor (sandwiched between floors), remove the wall and place a floor tile
+          if (wallNeedsShadow && IsInMapRange(x, y - 1) && map[x, y - 1] == 0 && IsInMapRange(x, y + 1) && map[x, y + 1] == 0)
           {
             wallTilemap.SetTile(new Vector3Int(x, y, 0), null);
             floorTilemap.SetTile(new Vector3Int(x, y, 0), groundTiles[0]);
@@ -1164,9 +1228,9 @@ public class MapGenerator : MonoBehaviour
           //  minimap.SetPixel(x, y, new Color32(235, 255, 54, 255));
           //  numberOfChests++;
           //}
-          if (shouldSpawnEnemies && randomNumber < enemyChance &&
-              ObjectAreClearFromOtherObjects(renderedSpawnGroups, x, y, 10) &&
-              ObjectsAreClearFromWalls(x, y, 5))
+          if (shouldSpawnEnemies && !WorldGenerator.globalDisableEnemySpawns && randomNumber < enemyChance &&
+                  ObjectAreClearFromOtherObjects(renderedSpawnGroups, x, y, 10) &&
+                  ObjectsAreClearFromWalls(x, y, 5))
           {
 
             // Instantiate an EnemySpawnGroup asset so it has its own runtime data,

@@ -22,6 +22,14 @@ public class WorldGenerator : MonoBehaviour
   // Room size (should match MapGenerator's width/height)
   public int roomWidth = 60;
   public int roomHeight = 60;
+  [Header("Debug")]
+  [Tooltip("If true, MapGenerators will skip decoration spawning (tile shadows + per-room GameObject decorations).")]
+  public bool disableDecorationsGlobally = false;
+  [Tooltip("If true, MapGenerators will skip enemy spawning.")]
+  public bool disableEnemySpawnsGlobally = false;
+  // Static globals so MapGenerator can check even if toggles are applied after Start
+  public static bool globalDisableDecorations = false;
+  public static bool globalDisableEnemySpawns = false;
 
   [System.Serializable]
   public class StaticRoom
@@ -29,6 +37,10 @@ public class WorldGenerator : MonoBehaviour
     public Vector2Int position; // anchor (e.g., top-left or center)
     public GameObject prefab;
     public Vector2Int size = new Vector2Int(1, 1); // width, height
+    [Tooltip("Mandatory branch directions for this static room. Only directions listed here will be allowed to branch from this room.")]
+    public MapGenerator.EntranceDirection[] mandatoryBranchDirections = new MapGenerator.EntranceDirection[0];
+    [Tooltip("If true, this static room will not spawn enemies regardless of global/world settings.")]
+    public bool disableEnemySpawns = false;
   }
   public List<StaticRoom> staticRooms = new List<StaticRoom>();
 
@@ -45,6 +57,9 @@ public class WorldGenerator : MonoBehaviour
   private Dictionary<int, Vector2Int> roomIdToOrigin = new Dictionary<int, Vector2Int>();
   private Dictionary<int, HashSet<int>> roomAdjacency = new Dictionary<int, HashSet<int>>();
   private int nextRoomId = 0;
+  // Previous values to detect inspector/runtime changes
+  private bool prevDisableDecorationsGlobally = false;
+  private bool prevDisableEnemySpawnsGlobally = false;
   void Start()
   {
     cardinalDirections = new Vector2Int[] {
@@ -106,6 +121,8 @@ public class WorldGenerator : MonoBehaviour
   {
     HashSet<Vector2Int> roomPositions = new HashSet<Vector2Int>();
     Dictionary<Vector2Int, GameObject> staticRoomPrefabs = new Dictionary<Vector2Int, GameObject>();
+    // Track which static origins explicitly opt out of enemy spawns
+    HashSet<Vector2Int> staticOriginsDisableEnemySpawns = new HashSet<Vector2Int>();
     roomEntrances.Clear();
 
     Vector2Int startPos = Vector2Int.zero;
@@ -130,8 +147,25 @@ public class WorldGenerator : MonoBehaviour
 
       roomPositions.Add(worldPos);
       staticRoomPrefabs[worldPos] = staticRoom.prefab;
+      if (staticRoom.disableEnemySpawns)
+      {
+        staticOriginsDisableEnemySpawns.Add(worldPos);
+      }
       if (!roomEntrances.ContainsKey(worldPos))
         roomEntrances[worldPos] = new HashSet<Vector2Int>();
+      // If the static room specifies mandatoryBranchDirections, convert them to room grid offsets and store
+      if (staticRoom.mandatoryBranchDirections != null && staticRoom.mandatoryBranchDirections.Length > 0)
+      {
+        foreach (var dir in staticRoom.mandatoryBranchDirections)
+        {
+          Vector2Int offset = Vector2Int.zero;
+          if (dir == MapGenerator.EntranceDirection.NORTH) offset = new Vector2Int(0, roomHeight);
+          else if (dir == MapGenerator.EntranceDirection.SOUTH) offset = new Vector2Int(0, -roomHeight);
+          else if (dir == MapGenerator.EntranceDirection.EAST) offset = new Vector2Int(roomWidth, 0);
+          else if (dir == MapGenerator.EntranceDirection.WEST) offset = new Vector2Int(-roomWidth, 0);
+          if (offset != Vector2Int.zero) roomEntrances[worldPos].Add(offset);
+        }
+      }
     }
     // Log normalized static rooms for debugging
     Debug.Log($"WorldGenerator: staticRooms provided={staticRooms.Count}, normalized placed={staticRoomPrefabs.Count}");
@@ -254,6 +288,17 @@ public class WorldGenerator : MonoBehaviour
     }
 
     // 4. Build entrance sets for all rooms (mutual)
+    // Respect any pre-populated mandatory branch directions for static rooms by
+    // taking a snapshot of the initial allowed direction sets. If a room has an
+    // explicit non-empty set, treat it as a whitelist: only those directions are
+    // permitted to branch from that room. When creating mutual entrances, both
+    // sides must permit the connection (either unrestricted or explicitly allowed).
+    var initialAllowed = new Dictionary<Vector2Int, HashSet<Vector2Int>>();
+    foreach (var kv in roomEntrances)
+    {
+      initialAllowed[kv.Key] = new HashSet<Vector2Int>(kv.Value);
+    }
+
     foreach (var pos in roomPositions)
     {
       if (!roomEntrances.ContainsKey(pos))
@@ -262,7 +307,17 @@ public class WorldGenerator : MonoBehaviour
       foreach (var dir in cardinalDirections)
       {
         Vector2Int neighbor = pos + dir;
-        if (roomPositions.Contains(neighbor))
+        if (!roomPositions.Contains(neighbor)) continue;
+
+        // Determine if origin allows this dir (empty whitelist => unrestricted)
+        bool originHasWhitelist = initialAllowed.ContainsKey(pos) && initialAllowed[pos].Count > 0;
+        bool originAllows = !originHasWhitelist || initialAllowed[pos].Contains(dir);
+
+        // Determine if neighbor allows the opposite dir
+        bool neighborHasWhitelist = initialAllowed.ContainsKey(neighbor) && initialAllowed[neighbor].Count > 0;
+        bool neighborAllows = !neighborHasWhitelist || initialAllowed[neighbor].Contains(-dir);
+
+        if (originAllows && neighborAllows)
         {
           roomEntrances[pos].Add(dir);
           if (!roomEntrances.ContainsKey(neighbor))
@@ -291,7 +346,7 @@ public class WorldGenerator : MonoBehaviour
     foreach (var pos in roomPositions)
     {
       GameObject prefab = staticRoomPrefabs.ContainsKey(pos) ? staticRoomPrefabs[pos] : mapContainer;
-      CreateRoomAt(pos, roomEntrances.ContainsKey(pos) ? roomEntrances[pos] : new HashSet<Vector2Int>(), prefab);
+  CreateRoomAt(pos, roomEntrances.ContainsKey(pos) ? roomEntrances[pos] : new HashSet<Vector2Int>(), prefab, isStartRoom: false, disableEnemySpawnsForThisRoom: staticOriginsDisableEnemySpawns.Contains(pos));
       // small yield to avoid long frame when instantiating many rooms
       yield return null;
     }
@@ -299,6 +354,8 @@ public class WorldGenerator : MonoBehaviour
     // After creating all rooms, build adjacency from the recorded origins to ensure
     // static rooms (and any ordering differences) have mutual adjacency entries.
     BuildAdjacencyFromOrigins();
+    // Ensure our global toggles are applied to all created rooms
+    ApplyGlobalDebugTogglesToAllRooms();
     // Pre-create persistent decorations for all rooms to avoid spikes when player
     // enters a room. Start them hidden by default.
     foreach (var kv in roomMapGens)
@@ -463,13 +520,19 @@ public class WorldGenerator : MonoBehaviour
     }
   }
 
-  void CreateRoomAt(Vector2Int gridPos, HashSet<Vector2Int> entrances, GameObject prefab)
+  // Unified CreateRoomAt: accepts a prefab (optional), an isStartRoom flag and a
+  // per-room disableEnemySpawnsForThisRoom flag. This replaces previous
+  // overloaded/duplicate implementations so callers can consistently opt-out
+  // static rooms from enemy spawning.
+  void CreateRoomAt(Vector2Int gridPos, HashSet<Vector2Int> entrances, GameObject prefab, bool isStartRoom = false, bool disableEnemySpawnsForThisRoom = false)
   {
-
+    // Fallback to mapContainer when prefab is null
+    GameObject toInstantiate = prefab != null ? prefab : mapContainer;
     Vector3 worldPos = new Vector3(gridPos.x, gridPos.y, 0);
-    GameObject roomObj = Instantiate(prefab, worldPos, Quaternion.identity);
+    GameObject roomObj = Instantiate(toInstantiate, worldPos, Quaternion.identity);
+
     // If this is the mapContainer prefab, unhide it (set active)
-    if (prefab == mapContainer && roomObj != null)
+    if (toInstantiate == mapContainer && roomObj != null)
     {
       roomObj.SetActive(true);
     }
@@ -499,6 +562,20 @@ public class WorldGenerator : MonoBehaviour
         mapGen.player = pgo.transform;
     }
 
+    // Apply world-level debug toggles to the MapGenerator instance. Also
+    // respect static room opt-out which forces no enemy spawns for this room.
+    try
+    {
+      mapGen.spawnDecorations = disableDecorationsGlobally;
+      bool shouldSpawn = !disableEnemySpawnsGlobally;
+      if (disableEnemySpawnsForThisRoom) shouldSpawn = false;
+      mapGen.shouldSpawnEnemies = shouldSpawn;
+    }
+    catch (System.Exception ex)
+    {
+      Debug.LogWarning($"WorldGenerator: failed to apply debug toggles to MapGenerator at {gridPos}: {ex}");
+    }
+
     // Convert Vector2Int directions to MapGenerator.EntranceDirection[]
     var entranceDirs = new List<MapGenerator.EntranceDirection>();
     foreach (var dir in entrances)
@@ -511,26 +588,30 @@ public class WorldGenerator : MonoBehaviour
     // Pass entrance directions to MapGenerator
     mapGen.SetEntrances(entranceDirs.ToArray());
 
-    // Assign a stable world-level room id and store mappings
-    int assignedId = nextRoomId++;
-    roomOriginToId[gridPos] = assignedId;
-    roomIdToOrigin[assignedId] = gridPos;
-    roomMapGens[gridPos] = mapGen;
-    // tell the MapGenerator about its world id (public field added)
-    mapGen.worldRoomId = assignedId;
+    // Assign world-level id mapping for this room origin
+    Vector2Int origin = new Vector2Int((int)worldPos.x, (int)worldPos.y);
+    if (!roomOriginToId.ContainsKey(origin))
+    {
+      int assignedId = nextRoomId++;
+      roomOriginToId[origin] = assignedId;
+      roomIdToOrigin[assignedId] = origin;
+      roomMapGens[origin] = mapGen;
+      if (!roomAdjacency.ContainsKey(assignedId)) roomAdjacency[assignedId] = new HashSet<int>();
+    }
+    mapGen.worldRoomId = roomOriginToId[origin];
 
-    // initialize adjacency entry for this room
-    if (!roomAdjacency.ContainsKey(assignedId)) roomAdjacency[assignedId] = new HashSet<int>();
     // record adjacency based on entrances (will be filled mutually when neighbors are created)
+    int thisId = mapGen.worldRoomId;
+    if (!roomAdjacency.ContainsKey(thisId)) roomAdjacency[thisId] = new HashSet<int>();
     foreach (var dir in entrances)
     {
-      Vector2Int neighborOrigin = gridPos + dir;
+      Vector2Int neighborOrigin = origin + dir;
       if (roomOriginToId.ContainsKey(neighborOrigin))
       {
         int nid = roomOriginToId[neighborOrigin];
-        roomAdjacency[assignedId].Add(nid);
+        roomAdjacency[thisId].Add(nid);
         if (!roomAdjacency.ContainsKey(nid)) roomAdjacency[nid] = new HashSet<int>();
-        roomAdjacency[nid].Add(assignedId);
+        roomAdjacency[nid].Add(thisId);
       }
     }
   }
@@ -546,6 +627,13 @@ public class WorldGenerator : MonoBehaviour
   }
   void Update()
   {
+    // Detect changes to debug toggles in the Inspector and reapply them immediately
+    if (prevDisableDecorationsGlobally != disableDecorationsGlobally || prevDisableEnemySpawnsGlobally != disableEnemySpawnsGlobally)
+    {
+      prevDisableDecorationsGlobally = disableDecorationsGlobally;
+      prevDisableEnemySpawnsGlobally = disableEnemySpawnsGlobally;
+      ApplyGlobalDebugTogglesToAllRooms();
+    }
     if (player == null)
     {
       var pgo = GameObject.FindWithTag("Player");
@@ -686,6 +774,39 @@ public class WorldGenerator : MonoBehaviour
     }
   }
 
+  // Apply current WorldGenerator debug toggles to all known MapGenerator instances.
+  void ApplyGlobalDebugTogglesToAllRooms()
+  {
+    foreach (var kv in roomMapGens)
+    {
+      var origin = kv.Key;
+      var mg = kv.Value;
+      if (mg == null) continue;
+      try
+      {
+        mg.spawnDecorations = disableDecorationsGlobally;
+        mg.shouldSpawnEnemies = !disableEnemySpawnsGlobally;
+        // update static globals for MapGenerator checks
+        WorldGenerator.globalDisableDecorations = disableDecorationsGlobally;
+        WorldGenerator.globalDisableEnemySpawns = disableEnemySpawnsGlobally;
+        // If decorations are disabled, ensure any persistent decorations are hidden/cleared
+        if (disableDecorationsGlobally)
+        {
+          try { mg.ClearDecorations(); } catch (System.Exception) { }
+        }
+        // If enemy spawns are disabled, remove already-spawned enemies under this room
+        if (disableEnemySpawnsGlobally)
+        {
+          try { mg.ClearSpawnedEnemies(); } catch (System.Exception) { }
+        }
+      }
+      catch (System.Exception ex)
+      {
+        Debug.LogWarning($"WorldGenerator: failed to apply debug toggles to MapGenerator at {origin}: {ex}");
+      }
+    }
+  }
+
   // Rebuild adjacency by scanning neighbors of every known origin. This makes
   // adjacency robust when rooms (especially static rooms) were created in any order.
   void BuildAdjacencyFromOrigins()
@@ -757,7 +878,7 @@ public class WorldGenerator : MonoBehaviour
         Vector2Int startPos = new Vector2Int(0, 0);
         worldGenerationController.roomLocations.Add(new KeyValuePair<int, int>(startPos.x, startPos.y));
         roomEntrances[startPos] = new HashSet<Vector2Int>();
-        CreateRoomAt(startPos, roomEntrances[startPos], isStartRoom: true);
+  CreateRoomAt(startPos, roomEntrances[startPos], mapContainer, isStartRoom: true, disableEnemySpawnsForThisRoom: false);
 
         GenerateRoomLayout(startPos);
     }
@@ -821,7 +942,7 @@ public class WorldGenerator : MonoBehaviour
             if (roomEntrances.ContainsKey(parent) && prevDir.HasValue)
                 roomEntrances[parent].Add(prevDir.Value);
 
-            CreateRoomAt(newRoomPos, roomEntrances[newRoomPos], isStartRoom: false);
+            CreateRoomAt(newRoomPos, roomEntrances[newRoomPos], mapContainer, isStartRoom: false, disableEnemySpawnsForThisRoom: false);
             roomsCreated++;
 
             // Build a weighted list of possible directions
@@ -872,49 +993,7 @@ public class WorldGenerator : MonoBehaviour
         }
     }
 
-    void CreateRoomAt(Vector2Int gridPos, HashSet<Vector2Int> entrances, bool isStartRoom)
-    {
-        Vector3 worldPos = new Vector3(gridPos.x, gridPos.y, 0);
-        GameObject roomObj = Instantiate(mapContainer, worldPos, Quaternion.identity);
 
-        MapGenerator mapGen = roomObj.GetComponentInChildren<MapGenerator>();
-        if (mapGen == null)
-        {
-            Debug.LogError("MapGenerator component not found in room prefab!");
-            return;
-        }
-
-        // Use biome based on Y
-        mapGen.currentBiomeGenerator = GetBiomeForY(gridPos.y);
-
-        mapGen.seed = System.Guid.NewGuid().ToString();
-        mapGen.useRandomSeed = false;
-
-        // Convert Vector2Int directions to MapGenerator.EntranceDirection[]
-        var entranceDirs = new List<MapGenerator.EntranceDirection>();
-        foreach (var dir in entrances)
-        {
-            var entrance = DirectionToEntrance(dir);
-            if (entrance != null)
-                entranceDirs.Add(entrance.Value);
-        }
-
-        // Pass entrance directions to MapGenerator
-        mapGen.SetEntrances(entranceDirs.ToArray());
-
-        // Assign world-level id mapping for this room origin
-        Vector2Int origin = new Vector2Int((int)worldPos.x, (int)worldPos.y);
-        if (!roomOriginToId.ContainsKey(origin))
-        {
-          int assignedId = nextRoomId++;
-          roomOriginToId[origin] = assignedId;
-          roomIdToOrigin[assignedId] = origin;
-          if (!roomAdjacency.ContainsKey(assignedId)) roomAdjacency[assignedId] = new HashSet<int>();
-        }
-        mapGen.worldRoomId = roomOriginToId[origin];
-
-        // Per-room enemy spawning is handled by MapGenerator.RenderMap when tiles are evaluated.
-    }
 
     // Helper to convert Vector2Int to MapGenerator.EntranceDirection
     MapGenerator.EntranceDirection? DirectionToEntrance(Vector2Int dir)
