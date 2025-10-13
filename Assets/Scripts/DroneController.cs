@@ -49,7 +49,7 @@ public class DroneController : MonoBehaviour
     {
         freezer = GameObject.Find("GameManagers").GetComponent<Freezer>();
         cameraShake = GameObject.FindWithTag("MainCamera").GetComponent<ShakeBehavior>();
-        player = GameObject.Find("Player");
+        player = GameObject.FindWithTag("Player");
         audioSource = GetComponent<AudioSource>();
         audioSource.pitch = Random.Range(0.8f, 1.2f);
         currentEnemyState = EnemyState.IDLE;
