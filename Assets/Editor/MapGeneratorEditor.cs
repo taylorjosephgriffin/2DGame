@@ -32,6 +32,9 @@ public class MapGeneratorEditor : Editor
         {
             if (mg.waterTilemap != null)
             {
+                // Re-render base map to restore walls/floors/shadows, then clear decorative water
+                Undo.RecordObject(mg, "Regenerate Base Map");
+                mg.RegenerateBaseMap();
                 Undo.RecordObject(mg.waterTilemap, "Clear Water Tilemap");
                 mg.waterTilemap.ClearAllTiles();
                 if (!Application.isPlaying)
@@ -46,5 +49,6 @@ public class MapGeneratorEditor : Editor
                 Debug.LogWarning("MapGeneratorEditor: waterTilemap is not assigned.");
             }
         }
+            GUILayout.Space(6);
     }
 }

@@ -41,3 +41,5 @@ MonoBehaviour:
     type: 2}
   wallTileCliff: {fileID: 11400000, guid: 35db00a5c2d2743378d308b7bb7a7313, type: 2}
   wallTileShadow: {fileID: 11400000, guid: c95d3241a37db4905aa2a96ffb7bfc4a, type: 2}
+  waterTile: {fileID: 11400000, guid: 7c25d3c723a4b4c19a9006274a7b902c, type: 2}
+  waterEdgeTile: {fileID: 0}
