@@ -21,7 +21,7 @@ public static class SpriteExploder {
         source.transform.localRotation = Quaternion.identity;
 
         //get rigidbody information
-        Vector2 origVelocity = source.GetComponent<Rigidbody2D>().velocity;
+        Vector2 origVelocity = source.GetComponent<Rigidbody2D>().linearVelocity;
 
         //get collider information
         PolygonCollider2D sourcePolyCollider = source.GetComponent<PolygonCollider2D>();
@@ -153,7 +153,7 @@ public static class SpriteExploder {
 
         //Create and Add Rigidbody
         Rigidbody2D rigidbody = piece.AddComponent<Rigidbody2D>();
-        rigidbody.velocity = origVelocity;
+        rigidbody.linearVelocity = origVelocity;
         rigidbody.isKinematic = false;
         rigidbody.mass = 0f;
         
@@ -177,7 +177,7 @@ public static class SpriteExploder {
         source.transform.localRotation = Quaternion.identity;
 
         //get rigidbody information
-        Vector2 origVelocity = source.GetComponent<Rigidbody2D>().velocity;
+        Vector2 origVelocity = source.GetComponent<Rigidbody2D>().linearVelocity;
 
         //get collider information
         PolygonCollider2D sourcePolyCollider = source.GetComponent<PolygonCollider2D>();
@@ -296,7 +296,7 @@ public static class SpriteExploder {
 
         //Create and Add Rigidbody
         Rigidbody2D rigidbody = piece.AddComponent<Rigidbody2D>();
-        rigidbody.velocity = origVelocity;
+        rigidbody.linearVelocity = origVelocity;
         rigidbody.isKinematic = false;
         rigidbody.mass = 0f;
 

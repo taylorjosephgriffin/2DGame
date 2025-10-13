@@ -24,4 +24,7 @@ public class GeneratorConfig : ScriptableObject
   public EnemySpawnGroup[] enemySpawnGroups;
 
   public Tile wallTileTop, wallTileThatNeedsShadow, wallTileThatNeedsShadow2, wallTileCliff, wallTileShadow;
+  // Decorative water tiles (optional)
+  public RuleTile waterTile;
+  public Tile waterEdgeTile;
 }

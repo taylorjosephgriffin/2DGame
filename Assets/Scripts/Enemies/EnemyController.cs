@@ -15,6 +15,8 @@ public class EnemyController : MonoBehaviour
   public int health;
   public float speed;
   public EnemySpawnGroup spawnGroup;
+  [Tooltip("Impulse force applied to enemy when hit by a projectile (uses a fixed magnitude)")]
+  public float knockbackForce = 4f;
   public Vector3 moveDirection;
   AudioSource audioSource;
   Freezer freezer;
@@ -166,11 +168,37 @@ public class EnemyController : MonoBehaviour
 
   void TakeDamage(int damage, Collider2D collision)
   {
-    moveDirection = player.transform.position - lastCollision.transform.position;
-    StartCoroutine(cameraShake.Shake(.05f, .05f));
-    if (damage < health) StartCoroutine(FreezeAnimFrame());
-    collision.GetComponent<Projectile>().currentProjectileState = ProjectileState.HIT;
-    transform.GetComponent<Rigidbody2D>().AddForce(moveDirection * -4f, ForceMode2D.Impulse);
+    // compute knockback direction from the collision point to the enemy and apply a fixed impulse
+    if (collision != null)
+    {
+      Vector3 collisionPos = collision.transform.position;
+      Vector3 dir = (transform.position - collisionPos);
+      if (dir.sqrMagnitude > 0.0001f)
+      {
+        dir.Normalize();
+      }
+      else
+      {
+        // fallback: push away from player if collision point coincides
+        dir = (transform.position - player.transform.position).normalized;
+      }
+      moveDirection = dir;
+      StartCoroutine(cameraShake.Shake(.05f, .05f));
+      if (damage < health) StartCoroutine(FreezeAnimFrame());
+      var proj = collision.GetComponent<Projectile>();
+      if (proj != null) proj.currentProjectileState = ProjectileState.HIT;
+      var rb = transform.GetComponent<Rigidbody2D>();
+      if (rb != null)
+      {
+        rb.AddForce(dir * knockbackForce, ForceMode2D.Impulse);
+      }
+    }
+    else
+    {
+      // fallback behaviour if no collision info: small backward nudge
+      var rb = transform.GetComponent<Rigidbody2D>();
+      if (rb != null) rb.AddForce(new Vector2(0, -knockbackForce * 0.5f), ForceMode2D.Impulse);
+    }
     health -= damage;
   }
 

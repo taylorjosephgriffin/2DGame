@@ -55,12 +55,12 @@ public class Projectile : MonoBehaviour
         }
         if (currentProjectileState == ProjectileState.FIRED)
         {
-            GetComponent<Rigidbody2D>().velocity = aimDirection * projectileSpeed;
+            GetComponent<Rigidbody2D>().linearVelocity = aimDirection * projectileSpeed;
         }
         if (currentProjectileState == ProjectileState.HIT)
         {
             killProjectile();
-            GetComponent<Rigidbody2D>().velocity = Vector3.zero;
+            GetComponent<Rigidbody2D>().linearVelocity = Vector3.zero;
         }
     }
 

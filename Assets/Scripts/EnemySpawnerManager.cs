@@ -9,7 +9,8 @@ public class EnemySpawnerManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        enemySpawnGroup.spawnEnemies(new Vector2Int((int)transform.position.x, (int)transform.position.y));
+        Vector2 worldPos = new Vector2(transform.position.x, transform.position.y);
         enemySpawnGroup.spawnLocation = new Vector2Int((int)transform.position.x, (int)transform.position.y);
+        enemySpawnGroup.spawnEnemiesAtWorldPosition(worldPos, this.transform);
     }
 }
