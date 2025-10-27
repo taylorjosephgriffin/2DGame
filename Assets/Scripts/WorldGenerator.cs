@@ -174,6 +174,15 @@ public class WorldGenerator : MonoBehaviour
       Debug.Log($"WorldGenerator: static room at {kv.Key} -> prefab={(kv.Value != null ? kv.Value.name : "<null>")}");
     }
 
+    // Snapshot of initial allowed branch directions for static rooms.
+    // If a static origin has a non-empty set here, it's a whitelist: only those
+    // directions are allowed to spawn conjoining rooms from that origin.
+    var initialAllowedEarly = new Dictionary<Vector2Int, HashSet<Vector2Int>>();
+    foreach (var kv in roomEntrances)
+    {
+      initialAllowedEarly[kv.Key] = new HashSet<Vector2Int>(kv.Value);
+    }
+
     // If there are no static rooms, seed with a start position so procedural generation can proceed
     if (roomPositions.Count == 0)
     {
@@ -204,8 +213,18 @@ public class WorldGenerator : MonoBehaviour
         {
           safety++;
           int sign = (toCellX > curCell.x) ? 1 : -1;
+          var prevCell = new Vector2Int(curCell.x, curCell.y);
           curCell.x += sign;
           Vector2Int worldPos = new Vector2Int(curCell.x * roomWidth, curCell.y * roomHeight);
+          Vector2Int prevWorld = new Vector2Int(prevCell.x * roomWidth, prevCell.y * roomHeight);
+          Vector2Int dir = worldPos - prevWorld;
+          // If the previous cell is a static origin with a whitelist, respect it.
+          if (initialAllowedEarly.TryGetValue(prevWorld, out var allowed) && allowed.Count > 0 && !allowed.Contains(dir))
+          {
+            // skip spawning this conjoining room due to whitelist
+            Debug.Log($"WorldGenerator: skipping static pairwise spawn at {worldPos} from {prevWorld} due to whitelist (dir={dir})");
+            continue;
+          }
           roomPositions.Add(worldPos);
           if (!roomEntrances.ContainsKey(worldPos)) roomEntrances[worldPos] = new HashSet<Vector2Int>();
           if ((safety & 63) == 0) yield return null; // yield occasionally
@@ -215,8 +234,16 @@ public class WorldGenerator : MonoBehaviour
         {
           safety++;
           int sign = (toCellY > curCell.y) ? 1 : -1;
+          var prevCell = new Vector2Int(curCell.x, curCell.y);
           curCell.y += sign;
           Vector2Int worldPos = new Vector2Int(curCell.x * roomWidth, curCell.y * roomHeight);
+          Vector2Int prevWorld = new Vector2Int(prevCell.x * roomWidth, prevCell.y * roomHeight);
+          Vector2Int dir = worldPos - prevWorld;
+          if (initialAllowedEarly.TryGetValue(prevWorld, out var allowed2) && allowed2.Count > 0 && !allowed2.Contains(dir))
+          {
+            Debug.Log($"WorldGenerator: skipping static pairwise spawn at {worldPos} from {prevWorld} due to whitelist (dir={dir})");
+            continue;
+          }
           roomPositions.Add(worldPos);
           if (!roomEntrances.ContainsKey(worldPos)) roomEntrances[worldPos] = new HashSet<Vector2Int>();
           if ((safety & 63) == 0) yield return null; // yield occasionally
@@ -258,6 +285,17 @@ public class WorldGenerator : MonoBehaviour
         foreach (var dir in possibleDirs)
         {
           Vector2Int newRoomOrigin = baseRoom + dir;
+          // Enforce any static-room whitelists: origin (baseRoom) and neighbor (newRoomOrigin)
+          bool originHasWhitelist = initialAllowedEarly.ContainsKey(baseRoom) && initialAllowedEarly[baseRoom].Count > 0;
+          bool originAllows = !originHasWhitelist || initialAllowedEarly[baseRoom].Contains(dir);
+          bool neighborHasWhitelist = initialAllowedEarly.ContainsKey(newRoomOrigin) && initialAllowedEarly[newRoomOrigin].Count > 0;
+          bool neighborAllows = !neighborHasWhitelist || initialAllowedEarly[newRoomOrigin].Contains(-dir);
+          if (!originAllows || !neighborAllows)
+          {
+            // skip creating this room from this base due to whitelist restrictions
+            Debug.Log($"WorldGenerator: skipping procedural spawn {newRoomOrigin} from base {baseRoom} because originAllows={originAllows} neighborAllows={neighborAllows} dir={dir}");
+            continue;
+          }
           if (!roomPositions.Contains(newRoomOrigin))
           {
             roomPositions.Add(newRoomOrigin);

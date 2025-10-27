@@ -115,10 +115,10 @@ public class MapGenerator : MonoBehaviour
   void Init()
   {
     GenerateMap();
-    // Save a copy of the base map immediately after generation so we can restore it later
+    AddDirectionalPassage();
+    // Save a copy of the base map (including directional passages) so we can restore it later
     if (map != null)
       baseMapBackup = (int[,])map.Clone();
-    AddDirectionalPassage();
     // Choose a single enemy spawn group for this room (if the biome provides any)
     if (currentBiomeGenerator != null && currentBiomeGenerator.enemySpawnGroups != null && currentBiomeGenerator.enemySpawnGroups.Length > 0)
     {
@@ -131,9 +131,8 @@ public class MapGenerator : MonoBehaviour
     currentPlayerRoomId = GetPlayerRoomId();
     if (currentPlayerRoomId == -1)
     {
-      Debug.Log("[MapGenerator] Init: player not on map; moving player to first available floor tile.");
-      MovePlayer();
-      currentPlayerRoomId = GetPlayerRoomId();
+      Debug.Log("[MapGenerator] Init: player not on map; leaving player in place (no auto-teleport).");
+      // Intentionally do not teleport the player. Designer/player should be placed manually.
     }
 
     // spawn decorations for the player's current room immediately after rendering
@@ -165,8 +164,8 @@ public class MapGenerator : MonoBehaviour
     if (directions.Contains(EntranceDirection.NORTH))
     {
       int xIndexNorth = (int)(width / 2 + .5f);
-      if (playerStartingPosition == EntranceDirection.NORTH) player.position = new Vector3Int(xIndexNorth, height - 1, 0);
-      Coord startTile = new Coord(xIndexNorth, (int)height);
+      // start from the top-most in-bounds tile so carving reaches the edge
+      Coord startTile = new Coord(xIndexNorth, height - 1);
       Coord endTile = new Coord();
       for (int y = height - 1; y >= 0; y--)
       {
@@ -178,15 +177,28 @@ public class MapGenerator : MonoBehaviour
         else continue;
       }
       List<Coord> line = GetLine(startTile, endTile);
+      Debug.Log($"[MapGenerator] AddDirectionalPassage NORTH: start={startTile.tileX},{startTile.tileY} end={endTile.tileX},{endTile.tileY} lineCount={line.Count}");
       foreach (Coord c in line)
       {
+        // Explicitly carve the map cells for the corridor width before drawing tiles
+        for (int ox = -2; ox <= 2; ox++)
+        {
+          for (int oy = -2; oy <= 2; oy++)
+          {
+            if (ox * ox + oy * oy <= 4)
+            {
+              int cx = c.tileX + ox;
+              int cy = c.tileY + oy;
+              if (IsInMapRange(cx, cy)) map[cx, cy] = 0;
+            }
+          }
+        }
         DrawCircle(c, 2);
       }
     }
     if (directions.Contains(EntranceDirection.SOUTH))
     {
       int xIndexSouth = (int)(width / 2 + .5f);
-      if (playerStartingPosition == EntranceDirection.SOUTH) player.position = new Vector3Int(xIndexSouth, 0, 0);
       Coord startTileSouth = new Coord(xIndexSouth, 0);
       Coord endTileSouth = new Coord();
       for (int y = 0; y < height; y++)
@@ -199,15 +211,27 @@ public class MapGenerator : MonoBehaviour
         else continue;
       }
       List<Coord> lineSouth = GetLine(startTileSouth, endTileSouth);
+      Debug.Log($"[MapGenerator] AddDirectionalPassage SOUTH: start={startTileSouth.tileX},{startTileSouth.tileY} end={endTileSouth.tileX},{endTileSouth.tileY} lineCount={lineSouth.Count}");
       foreach (Coord c in lineSouth)
       {
+        for (int ox = -2; ox <= 2; ox++)
+        {
+          for (int oy = -2; oy <= 2; oy++)
+          {
+            if (ox * ox + oy * oy <= 4)
+            {
+              int cx = c.tileX + ox;
+              int cy = c.tileY + oy;
+              if (IsInMapRange(cx, cy)) map[cx, cy] = 0;
+            }
+          }
+        }
         DrawCircle(c, 2);
       }
     }
     if (directions.Contains(EntranceDirection.WEST))
     {
       int yIndexWest = (int)(height / 2 + .5f);
-      if (playerStartingPosition == EntranceDirection.WEST) player.position = new Vector3Int(0, yIndexWest, 0);
       Coord startTileWest = new Coord(0, yIndexWest);
       Coord endTileWest = new Coord();
       for (int x = 0; x < width; x++)
@@ -220,8 +244,21 @@ public class MapGenerator : MonoBehaviour
         else continue;
       }
       List<Coord> lineWest = GetLine(startTileWest, endTileWest);
+      Debug.Log($"[MapGenerator] AddDirectionalPassage WEST: start={startTileWest.tileX},{startTileWest.tileY} end={endTileWest.tileX},{endTileWest.tileY} lineCount={lineWest.Count}");
       foreach (Coord c in lineWest)
       {
+        for (int ox = -2; ox <= 2; ox++)
+        {
+          for (int oy = -2; oy <= 2; oy++)
+          {
+            if (ox * ox + oy * oy <= 4)
+            {
+              int cx = c.tileX + ox;
+              int cy = c.tileY + oy;
+              if (IsInMapRange(cx, cy)) map[cx, cy] = 0;
+            }
+          }
+        }
         DrawCircle(c, 2);
       }
     }
@@ -229,8 +266,8 @@ public class MapGenerator : MonoBehaviour
     {
 
       int yIndexEast = (int)(height / 2 + .5f);
-      if (playerStartingPosition == EntranceDirection.EAST) player.position = new Vector3Int(width - 1, yIndexEast, 0);
-      Coord startTileEast = new Coord((int)width, yIndexEast);
+      // start from the right-most in-bounds tile so carving reaches the edge
+      Coord startTileEast = new Coord(width - 1, yIndexEast);
       Coord endTileEast = new Coord();
       for (int x = width - 1; x >= 0; x--)
       {
@@ -242,8 +279,21 @@ public class MapGenerator : MonoBehaviour
         else continue;
       }
       List<Coord> lineEast = GetLine(startTileEast, endTileEast);
+      Debug.Log($"[MapGenerator] AddDirectionalPassage EAST: start={startTileEast.tileX},{startTileEast.tileY} end={endTileEast.tileX},{endTileEast.tileY} lineCount={lineEast.Count}");
       foreach (Coord c in lineEast)
       {
+        for (int ox = -2; ox <= 2; ox++)
+        {
+          for (int oy = -2; oy <= 2; oy++)
+          {
+            if (ox * ox + oy * oy <= 4)
+            {
+              int cx = c.tileX + ox;
+              int cy = c.tileY + oy;
+              if (IsInMapRange(cx, cy)) map[cx, cy] = 0;
+            }
+          }
+        }
         DrawCircle(c, 2);
       }
     }
@@ -675,18 +725,8 @@ public class MapGenerator : MonoBehaviour
 
   void MovePlayer()
   {
-    for (int x = 0; x < width; x++)
-    {
-      //Loop through the height of the map
-      for (int y = 0; y < height; y++)
-      {
-        if (map[x, y] == 0)
-        {
-          GameObject.FindWithTag("Player").transform.position = new Vector3Int(x, y, 0);
-          GameObject.FindWithTag("MainCamera").transform.position = new Vector3Int(x, y, -10);
-        }
-      }
-    }
+    // Intentionally left blank to avoid auto-teleporting the player during map generation.
+    // Keep method for editor/debug convenience if explicit teleportation is desired later.
   }
 
   bool IsInMapRange(int x, int y)
@@ -923,6 +963,10 @@ public class MapGenerator : MonoBehaviour
     List<Coord> line = GetLine(tileA, tileB);
     foreach (Coord c in line)
     {
+      // Carve the main path explicitly in the map so roomId detection and tile checks
+      // recognize the passage even if DrawCircle later overlays tiles.
+      if (IsInMapRange(c.tileX, c.tileY))
+        map[c.tileX, c.tileY] = 0;
       DrawCircle(c, 2);
     }
   }
@@ -997,6 +1041,11 @@ public class MapGenerator : MonoBehaviour
         }
         gradientAccumulation -= longest;
       }
+    }
+    // Ensure the final destination is included so drawing operations reach the endpoint
+    if (line.Count == 0 || line[line.Count - 1].tileX != to.tileX || line[line.Count - 1].tileY != to.tileY)
+    {
+      line.Add(new Coord(to.tileX, to.tileY));
     }
     return line;
   }
